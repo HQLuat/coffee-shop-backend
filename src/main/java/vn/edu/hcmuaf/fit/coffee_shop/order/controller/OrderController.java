@@ -83,23 +83,54 @@ public class OrderController {
     }
 
     /**
+     * Kiểm tra trạng thái thanh toán ZaloPay
+     */
+    @GetMapping("/zalopay/query/{appTransId}")
+    public ResponseEntity<?> queryPaymentStatus(
+            @PathVariable String appTransId,
+            Authentication authentication) {
+        try {
+            Map<String, Object> status = zaloPayService.queryPaymentStatus(appTransId);
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Lỗi khi kiểm tra trạng thái thanh toán: " + e.getMessage()));
+        }
+    }
+
+    /**
      * ZaloPay callback endpoint
      */
     @PostMapping("/zalopay/callback")
     public ResponseEntity<?> zaloPayCallback(@RequestBody Map<String, String> callbackData) {
-        boolean isValid = zaloPayService.verifyCallback(callbackData);
+        try {
+            System.out.println("📞 Received ZaloPay callback: " + callbackData);
 
-        if (isValid) {
-            // Update order status to CONFIRMED
-            // Parse callback data and update order
+            boolean isValid = zaloPayService.verifyCallback(callbackData);
+
+            if (isValid) {
+                // TODO: Update order status to CONFIRMED
+                // Parse callback data and update order
+                // String dataStr = callbackData.get("data");
+                // Parse JSON from dataStr to get app_trans_id and update order
+
+                return ResponseEntity.ok(Map.of(
+                        "return_code", 1,
+                        "return_message", "success"
+                ));
+            } else {
+                System.err.println("❌ Invalid callback MAC");
+                return ResponseEntity.ok(Map.of(
+                        "return_code", -1,
+                        "return_message", "mac not equal"
+                ));
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Error processing callback: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.ok(Map.of(
-                    "return_code", 1,
-                    "return_message", "success"
-            ));
-        } else {
-            return ResponseEntity.ok(Map.of(
-                    "return_code", -1,
-                    "return_message", "mac not equal"
+                    "return_code", 0,
+                    "return_message", "error: " + e.getMessage()
             ));
         }
     }

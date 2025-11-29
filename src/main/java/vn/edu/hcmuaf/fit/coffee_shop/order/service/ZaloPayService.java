@@ -1,6 +1,5 @@
 package vn.edu.hcmuaf.fit.coffee_shop.order.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -21,7 +20,6 @@ public class ZaloPayService {
 
     private final OrderRepository orderRepository;
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     // ZaloPay Configuration (Sandbox)
     private static final String APP_ID = "2553";
@@ -29,37 +27,52 @@ public class ZaloPayService {
     private static final String KEY2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
     private static final String ZALOPAY_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/create";
 
+    // Counter cho transaction ID
+    private static int transIdCounter = 1;
+
     public ZaloPayResponse createZaloPayOrder(Long orderId) throws Exception {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
 
-        // Generate app_trans_id
+        // Generate app_trans_id với format đúng: yyMMdd_xxxxxx
         String appTransId = generateAppTransId();
         long appTime = System.currentTimeMillis();
         long amount = order.getTotalAmount().longValue();
 
-        // Prepare order data
+        // Build embed_data (empty JSON object)
+        String embedData = "{}";
+
+        // Build item JSON
+        String itemJson = buildItemJson(order);
+
+        // Prepare order data theo đúng thứ tự của ZaloPay
         Map<String, Object> orderData = new LinkedHashMap<>();
-        orderData.put("app_id", APP_ID);
+        orderData.put("app_id", Integer.parseInt(APP_ID));
         orderData.put("app_trans_id", appTransId);
         orderData.put("app_user", order.getUser().getEmail());
         orderData.put("app_time", appTime);
         orderData.put("amount", amount);
-        orderData.put("item", buildItemJson(order));
+        orderData.put("item", itemJson);
+        orderData.put("embed_data", embedData);
         orderData.put("description", "Thanh toán đơn hàng #" + order.getOrderCode());
         orderData.put("bank_code", "");
-        orderData.put("callback_url", "https://localhost:8080/api/orders/zalopay/callback");
 
-        // Generate MAC
+        // Callback URL - thay đổi thành URL thực tế của bạn
+        orderData.put("callback_url", "https://yourdomain.com/api/orders/zalopay/callback");
+
+        // Generate MAC theo đúng format
+        // Format: app_id|app_trans_id|app_user|amount|app_time|embed_data|item
         String data = APP_ID + "|" + appTransId + "|" + order.getUser().getEmail() + "|"
-                + amount + "|" + appTime + "|"
-                + "" + "|" + buildItemJson(order);
+                + amount + "|" + appTime + "|" + embedData + "|" + itemJson;
+
         String mac = generateMac(data, KEY1);
         orderData.put("mac", mac);
 
         System.out.println("📤 Sending request to ZaloPay:");
-        System.out.println("Data: " + data);
+        System.out.println("app_trans_id: " + appTransId);
+        System.out.println("Data string: " + data);
         System.out.println("MAC: " + mac);
+        System.out.println("Full request: " + orderData);
 
         try {
             // Gửi HTTP POST request đến ZaloPay
@@ -93,7 +106,8 @@ public class ZaloPayService {
                 } else {
                     // Lỗi từ ZaloPay
                     String returnMessage = (String) responseBody.get("return_message");
-                    throw new RuntimeException("ZaloPay error: " + returnMessage);
+                    Integer subReturnCode = (Integer) responseBody.get("sub_return_code");
+                    throw new RuntimeException("ZaloPay error [" + returnCode + "/" + subReturnCode + "]: " + returnMessage);
                 }
             }
 
@@ -115,31 +129,119 @@ public class ZaloPayService {
 
             return calculatedMac.equals(receivedMac);
         } catch (Exception e) {
+            System.err.println("Error verifying callback: " + e.getMessage());
             return false;
         }
     }
 
-    private String generateAppTransId() {
+    /**
+     * Generate app_trans_id theo format chuẩn của ZaloPay: yyMMdd_xxxxxx
+     * Trong đó xxxxxx là số tự tăng từ 000001 đến 999999
+     */
+    private synchronized String generateAppTransId() {
+        // Reset counter nếu vượt quá 999999
+        if (transIdCounter >= 1000000) {
+            transIdCounter = 1;
+        }
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
         String date = sdf.format(new Date());
-        String random = String.format("%06d", new Random().nextInt(1000000));
-        return date + "_" + random;
+
+        // Format: yyMMdd_xxxxxx (6 chữ số)
+        String transId = String.format("%s_%06d", date, transIdCounter);
+        transIdCounter++;
+
+        return transId;
     }
 
+    /**
+     * Build item JSON theo format của ZaloPay
+     * Format: [{"itemid":"","itemname":"","itemprice":0,"itemquantity":0}]
+     */
     private String buildItemJson(Order order) {
-        // Simple JSON format for items
         StringBuilder items = new StringBuilder("[");
+
         for (int i = 0; i < order.getItems().size(); i++) {
-            if (i > 0) items.append(",");
+            if (i > 0) {
+                items.append(",");
+            }
+
             var item = order.getItems().get(i);
-            items.append("{\"name\":\"").append(item.getProductName()).append("\",")
-                    .append("\"quantity\":").append(item.getQuantity()).append(",")
-                    .append("\"price\":").append(item.getPrice().longValue()).append("}");
+            items.append("{")
+                    .append("\"itemid\":\"").append(item.getProductId()).append("\",")
+                    .append("\"itemname\":\"").append(escapeJson(item.getProductName())).append("\",")
+                    .append("\"itemprice\":").append(item.getPrice().longValue()).append(",")
+                    .append("\"itemquantity\":").append(item.getQuantity())
+                    .append("}");
         }
+
         items.append("]");
         return items.toString();
     }
 
+    /**
+     * Escape special characters trong JSON string
+     */
+    private String escapeJson(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
+    }
+
+    /**
+     * Query payment status từ ZaloPay
+     */
+    public Map<String, Object> queryPaymentStatus(String appTransId) throws Exception {
+        String queryEndpoint = "https://sb-openapi.zalopay.vn/v2/query";
+
+        // Prepare data for MAC
+        // Format: app_id|app_trans_id|key1
+        String data = APP_ID + "|" + appTransId + "|" + KEY1;
+        String mac = generateMac(data, KEY1);
+
+        // Prepare request body
+        Map<String, Object> queryData = new LinkedHashMap<>();
+        queryData.put("app_id", Integer.parseInt(APP_ID));
+        queryData.put("app_trans_id", appTransId);
+        queryData.put("mac", mac);
+
+        System.out.println("🔍 Querying payment status:");
+        System.out.println("app_trans_id: " + appTransId);
+        System.out.println("Data string: " + data);
+        System.out.println("MAC: " + mac);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(queryData, headers);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    queryEndpoint,
+                    request,
+                    Map.class
+            );
+
+            Map<String, Object> responseBody = response.getBody();
+            System.out.println("📥 Query Response: " + responseBody);
+
+            return responseBody;
+
+        } catch (Exception e) {
+            System.err.println("❌ Error querying payment status: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Lỗi khi truy vấn trạng thái thanh toán: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generate MAC signature sử dụng HmacSHA256
+     */
     private String generateMac(String data, String key) throws Exception {
         Mac sha256Hmac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKey = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
@@ -150,7 +252,9 @@ public class ZaloPayService {
         StringBuilder hexString = new StringBuilder();
         for (byte b : hash) {
             String hex = Integer.toHexString(0xff & b);
-            if (hex.length() == 1) hexString.append('0');
+            if (hex.length() == 1) {
+                hexString.append('0');
+            }
             hexString.append(hex);
         }
 

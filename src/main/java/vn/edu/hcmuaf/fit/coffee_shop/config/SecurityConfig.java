@@ -30,14 +30,20 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - PHẢI ĐỂ TRƯỚC
                         .requestMatchers("/api/users/register", "/api/users/login", "/api/users/refresh").permitAll()
+                        .requestMatchers("/api/orders/zalopay/callback").permitAll()
 
+                        // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/users/**").hasAnyRole("USER", "ADMIN")
 
+                        // User protected endpoints - ĐỂ SAU public endpoints
+                        .requestMatchers("/api/users/me", "/api/users/hello", "/api/users/logout").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
+
+                        // Tất cả request khác
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
-

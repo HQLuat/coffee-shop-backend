@@ -31,3 +31,6 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Config - DO NOT COMMIT ###
+application-secret.properties

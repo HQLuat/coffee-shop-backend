@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import vn.edu.hcmuaf.fit.coffee_shop.config.RefreshTokenConfig;
 import vn.edu.hcmuaf.fit.coffee_shop.user.entity.RefreshToken;
 import vn.edu.hcmuaf.fit.coffee_shop.user.entity.User;
 import vn.edu.hcmuaf.fit.coffee_shop.user.repository.RefreshTokenRepository;
@@ -17,15 +18,17 @@ import vn.edu.hcmuaf.fit.coffee_shop.user.repository.RefreshTokenRepository;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenConfig refreshTokenConfig;
 
-    // 7 days
-    private static final long REFRESH_TOKEN_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-
+    @Transactional
     public RefreshToken createRefreshToken(User user) {
+        // Xóa refresh token cũ nếu có
+        refreshTokenRepository.deleteByUser(user);
+        
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)
                 .token(UUID.randomUUID().toString())
-                .expiryDate(Instant.now().plusMillis(REFRESH_TOKEN_DURATION_MS))
+                .expiryDate(Instant.now().plusMillis(refreshTokenConfig.getExpiration()))
                 .build();
 
         return refreshTokenRepository.save(refreshToken);

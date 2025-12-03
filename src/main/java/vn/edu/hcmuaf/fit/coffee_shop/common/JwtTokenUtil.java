@@ -4,21 +4,22 @@ import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import lombok.RequiredArgsConstructor;
+import vn.edu.hcmuaf.fit.coffee_shop.config.JwtConfig;
 
 import java.security.Key;
 import java.util.Date;
 import java.util.function.Function;
 
 @Component
+@RequiredArgsConstructor
 public class JwtTokenUtil {
 
-    // Secret key
-    private static final String SECRET_KEY = "MySuperSecretKeyForJWT1234567890123456";
+    private final JwtConfig jwtConfig;
 
-    // Token
-    private static final long EXPIRATION_TIME = 24 * 60 * 60 * 1000;
-
-    private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtConfig.getSecret().getBytes());
+    }
 
     public String generateToken(String email, Long userId, String role) {
         return Jwts.builder()
@@ -26,14 +27,17 @@ public class JwtTokenUtil {
                 .claim("id", userId)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(new Date(System.currentTimeMillis() + jwtConfig.getExpiration()))
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
+            Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
@@ -42,7 +46,7 @@ public class JwtTokenUtil {
 
     public Claims getClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(key)
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
@@ -64,5 +68,4 @@ public class JwtTokenUtil {
     public Long extractUserId(String token) {
         return getClaims(token).get("id", Long.class);
     }
-
 }

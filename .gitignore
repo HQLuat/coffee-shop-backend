@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Application Config - DO NOT COMMIT ###
+application-secret.properties
+
+### Environment Variables ###
+.env
+.env.local
+.env.*.local

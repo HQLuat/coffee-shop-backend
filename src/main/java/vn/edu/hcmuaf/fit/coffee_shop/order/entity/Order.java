@@ -47,6 +47,10 @@ public class Order {
 
     private String note;
 
+    // ZaloPay transaction tracking
+    private String zaloPayTransId; // app_trans_id từ ZaloPay
+    private String zaloPayZpTransId; // zp_trans_id từ ZaloPay (sau khi thanh toán thành công)
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 

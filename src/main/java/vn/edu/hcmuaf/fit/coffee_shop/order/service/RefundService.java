@@ -34,7 +34,7 @@ public class RefundService {
     private static final String ZALOPAY_QUERY_REFUND_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/query_refund";
 
     /**
-     * Tạo yêu cầu hoàn tiền
+     * Tạo yêu cầu hoàn tiền - FIXED
      */
     @Transactional
     public RefundResponse createRefund(Long orderId, Long amount, String description) throws Exception {
@@ -49,6 +49,16 @@ public class RefundService {
         String mRefundId = generateMRefundId();
         long timestamp = System.currentTimeMillis();
 
+        // FIX: Lấy zp_trans_id (QUAN TRỌNG!)
+        String zpTransId = order.getZaloPayZpTransId();
+
+        System.out.println("💰 Creating refund request:");
+        System.out.println("  Order ID: " + orderId);
+        System.out.println("  Order Code: " + order.getOrderCode());
+        System.out.println("  zp_trans_id: " + zpTransId);
+        System.out.println("  m_refund_id: " + mRefundId);
+        System.out.println("  amount: " + amount);
+
         // 4. Tạo refund transaction trong DB trước
         RefundTransaction refundTransaction = RefundTransaction.builder()
                 .order(order)
@@ -62,27 +72,23 @@ public class RefundService {
         // 5. Prepare refund data cho ZaloPay
         Map<String, Object> refundData = new LinkedHashMap<>();
         refundData.put("app_id", Integer.parseInt(APP_ID));
-        refundData.put("zp_trans_id", order.getZaloPayZpTransId() != null ? order.getZaloPayZpTransId() : "");
-        refundData.put("m_refund_id", mRefundId);
-        refundData.put("timestamp", timestamp);
+        refundData.put("zp_trans_id", zpTransId); // FIX: Đảm bảo có giá trị
         refundData.put("amount", amount);
         refundData.put("description", refundTransaction.getDescription());
+        refundData.put("timestamp", timestamp);
+        refundData.put("m_refund_id", mRefundId);
 
-        // 6. Generate MAC
-        String data = APP_ID + "|" +
-                (order.getZaloPayZpTransId() != null ? order.getZaloPayZpTransId() : "") + "|" +
-                amount + "|" +
-                refundTransaction.getDescription() + "|" +
-                timestamp;
+        // 6. FIX: Generate MAC theo đúng format ZaloPay yêu cầu
+        // Format: app_id|zp_trans_id|amount|description|timestamp
+        String dataForMac = APP_ID + "|" + zpTransId + "|" + amount + "|" +
+                refundTransaction.getDescription() + "|" + timestamp;
 
-        String mac = generateMac(data, KEY1);
+        System.out.println("📝 Data for MAC: " + dataForMac);
+
+        String mac = generateMac(dataForMac, KEY1);
         refundData.put("mac", mac);
 
-        System.out.println("💰 Sending refund request to ZaloPay:");
-        System.out.println("Order ID: " + orderId);
-        System.out.println("m_refund_id: " + mRefundId);
-        System.out.println("zp_trans_id: " + order.getZaloPayZpTransId());
-        System.out.println("amount: " + amount);
+        System.out.println("📤 Refund request data: " + refundData);
 
         try {
             // 7. Call ZaloPay API
@@ -116,12 +122,16 @@ public class RefundService {
                     order.setStatus(OrderStatus.CANCELLED);
                     orderRepository.save(order);
 
+                    System.out.println("✅ Refund SUCCESS");
+
                 } else if (returnCode == 2) {
                     // Refund đang xử lý
                     refundTransaction.setStatus(RefundStatus.PROCESSING);
+                    System.out.println("⏳ Refund PROCESSING");
                 } else {
                     // Refund thất bại
                     refundTransaction.setStatus(RefundStatus.FAILED);
+                    System.err.println("❌ Refund FAILED: " + returnMessage);
                 }
 
                 refundRepository.save(refundTransaction);
@@ -168,7 +178,7 @@ public class RefundService {
         queryData.put("m_refund_id", mRefundId);
         queryData.put("timestamp", timestamp);
 
-        // 3. Generate MAC
+        // 3. Generate MAC: app_id|m_refund_id|timestamp
         String data = APP_ID + "|" + mRefundId + "|" + timestamp;
         String mac = generateMac(data, KEY1);
         queryData.put("mac", mac);
@@ -231,15 +241,19 @@ public class RefundService {
      * Validate order có thể refund không
      */
     private void validateRefundable(Order order, Long amount) {
+        System.out.println("🔍 Validating refund for order: " + order.getId());
+
         // Kiểm tra đã thanh toán qua ZaloPay chưa
         if (order.getZaloPayTransId() == null) {
             throw new RuntimeException("Đơn hàng này không được thanh toán qua ZaloPay");
         }
 
-        // Kiểm tra có zp_trans_id chưa (đã thanh toán thành công)
-        if (order.getZaloPayZpTransId() == null) {
-            throw new RuntimeException("Đơn hàng chưa được thanh toán thành công");
+        // FIX: Kiểm tra có zp_trans_id chưa (đã thanh toán thành công)
+        if (order.getZaloPayZpTransId() == null || order.getZaloPayZpTransId().isEmpty()) {
+            throw new RuntimeException("Đơn hàng chưa có zp_trans_id. Vui lòng verify payment trước khi refund!");
         }
+
+        System.out.println("✅ Order has zp_trans_id: " + order.getZaloPayZpTransId());
 
         // Kiểm tra số tiền hoàn
         if (amount <= 0) {
@@ -263,12 +277,6 @@ public class RefundService {
 
         if (totalRefunded + amount > order.getTotalAmount().longValue()) {
             throw new RuntimeException("Tổng số tiền hoàn vượt quá tổng tiền đơn hàng");
-        }
-
-        // Kiểm tra trạng thái order
-        if (order.getStatus() == OrderStatus.DELIVERED) {
-            // Có thể cho phép refund trong vòng X ngày sau khi giao hàng
-            // Implement logic nếu cần
         }
     }
 

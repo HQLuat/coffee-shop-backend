@@ -30,20 +30,25 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - PHẢI ĐỂ TRƯỚC
+                        // ============ PUBLIC ENDPOINTS - ĐẶT TRƯỚC ============
                         .requestMatchers("/api/users/register", "/api/users/login", "/api/users/refresh").permitAll()
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
 
-                        // Admin endpoints
+                        // ============ ADMIN ONLY - ĐẶT TRƯỚC /api/orders/** ============
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
+                        // ⚠️ QUAN TRỌNG: Các endpoint cụ thể phải đặt TRƯỚC endpoint chung /api/orders/**
+                        // Refund endpoints - ADMIN only
                         .requestMatchers("/api/orders/*/zalopay/refund").hasRole("ADMIN")
                         .requestMatchers("/api/orders/zalopay/refund/*").hasRole("ADMIN")
 
-                        // User protected endpoints - ĐỂ SAU public endpoints
+                        // ============ USER & ADMIN ENDPOINTS ============
                         .requestMatchers("/api/users/me", "/api/users/hello", "/api/users/logout").hasAnyRole("USER", "ADMIN")
+
+                        // ⚠️ Endpoint chung phải đặt SAU các endpoint cụ thể
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
 
-                        // Tất cả request khác
+                        // ============ DEFAULT ============
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

@@ -136,6 +136,65 @@ public class OrderController {
     }
 
     /**
+     * Hoàn tiền ZaloPay
+     */
+    @PostMapping("/{orderId}/zalopay/refund")
+    public ResponseEntity<?> refundZaloPayPayment(
+            @PathVariable Long orderId,
+            @RequestBody RefundRequest refundRequest,
+            Authentication authentication) {
+        try {
+            // Set orderId từ path param nếu chưa có trong request
+            if (refundRequest.getOrderId() == null) {
+                refundRequest.setOrderId(orderId);
+            }
+
+            // Validate orderId match
+            if (!refundRequest.getOrderId().equals(orderId)) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Order ID không khớp"));
+            }
+
+            // Chuyển đổi amount từ BigDecimal sang Long
+            Long amount = refundRequest.getAmount() != null
+                    ? refundRequest.getAmount().longValue()
+                    : null;
+
+            if (amount == null || amount <= 0) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "Số tiền hoàn phải lớn hơn 0"));
+            }
+
+            RefundResponse response = zaloPayService.refundOrder(
+                    orderId,
+                    amount,
+                    refundRequest.getDescription()
+            );
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Lỗi khi hoàn tiền ZaloPay: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Kiểm tra trạng thái hoàn tiền ZaloPay
+     */
+    @GetMapping("/zalopay/refund/{refundId}")
+    public ResponseEntity<?> queryRefundStatus(
+            @PathVariable String refundId,
+            Authentication authentication) {
+        try {
+            Map<String, Object> status = zaloPayService.queryRefundStatus(refundId);
+            return ResponseEntity.ok(status);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Lỗi khi kiểm tra trạng thái hoàn tiền: " + e.getMessage()));
+        }
+    }
+
+    /**
      * Hủy đơn hàng (chỉ được hủy khi đơn đang ở trạng thái PENDING)
      */
     @PostMapping("/{orderId}/cancel")

@@ -36,6 +36,8 @@ public class SecurityConfig {
 
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/orders/*/zalopay/refund").hasRole("ADMIN")
+                        .requestMatchers("/api/orders/zalopay/refund/*").hasRole("ADMIN")
 
                         // User protected endpoints - ĐỂ SAU public endpoints
                         .requestMatchers("/api/users/me", "/api/users/hello", "/api/users/logout").hasAnyRole("USER", "ADMIN")

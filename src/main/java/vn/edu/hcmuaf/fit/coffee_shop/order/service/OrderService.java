@@ -210,4 +210,14 @@ public class OrderService {
                 .itemCount(order.getItems().size())
                 .build();
     }
+
+    // Thêm method này vào OrderService.java
+
+    /**
+     * Get Order entity (helper method for internal use)
+     */
+    public Order getOrderEntity(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
+    }
 }

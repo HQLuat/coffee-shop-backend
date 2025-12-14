@@ -15,6 +15,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import vn.edu.hcmuaf.fit.coffee_shop.product.entity.Product;
 
 @Entity
 @Table(name = "cart_items")
@@ -32,14 +33,10 @@ public class CartItem {
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    @Column(nullable = false)
-    private Long productId;
-
-    @Column(nullable = false)
-    private String productName;
-
-    @Column(nullable = false)
-    private BigDecimal price;
+    // ✅ THAY ĐỔI: Liên kết với Product thay vì chỉ lưu productId
+    @ManyToOne
+    @JoinColumn(name = "product_id", nullable = false)
+    private Product product;
 
     @Column(nullable = false)
     private Integer quantity;
@@ -49,6 +46,9 @@ public class CartItem {
 
     // Helper method để tính subtotal
     public void calculateSubtotal() {
-        this.subtotal = this.price.multiply(BigDecimal.valueOf(this.quantity));
+        if (product != null) {
+            this.subtotal = BigDecimal.valueOf(product.getPrice())
+                    .multiply(BigDecimal.valueOf(this.quantity));
+        }
     }
 }

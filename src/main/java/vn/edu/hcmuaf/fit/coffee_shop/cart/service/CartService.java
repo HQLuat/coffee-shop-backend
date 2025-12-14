@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmuaf.fit.coffee_shop.cart.dto.*;
-import vn.edu.hcmuaf.fit.coffee_shop.cart.entity.Cart;
-import vn.edu.hcmuaf.fit.coffee_shop.cart.entity.CartItem;
-import vn.edu.hcmuaf.fit.coffee_shop.cart.repository.CartItemRepository;
-import vn.edu.hcmuaf.fit.coffee_shop.cart.repository.CartRepository;
+import vn.edu.hcmuaf.fit.coffee_shop.cart.entity.*;
+import vn.edu.hcmuaf.fit.coffee_shop.cart.repository.*;
+import vn.edu.hcmuaf.fit.coffee_shop.product.entity.Product;
+import vn.edu.hcmuaf.fit.coffee_shop.product.repository.ProductRepository;
 import vn.edu.hcmuaf.fit.coffee_shop.user.entity.User;
 import vn.edu.hcmuaf.fit.coffee_shop.user.repository.UserRepository;
 
@@ -22,10 +22,8 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository; // ✅ THÊM MỚI
 
-    /**
-     * Lấy giỏ hàng của user (tạo mới nếu chưa có)
-     */
     @Transactional
     public CartResponse getCart(String email) {
         User user = userRepository.findByEmail(email)
@@ -37,39 +35,38 @@ public class CartService {
         return convertToResponse(cart);
     }
 
-    /**
-     * Thêm sản phẩm vào giỏ hàng
-     */
     @Transactional
     public CartResponse addToCart(String email, AddToCartRequest request) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // Validation
+        // ✅ Validation
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
             throw new RuntimeException("Số lượng phải lớn hơn 0");
         }
 
+        // ✅ Tìm Product
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
+
         Cart cart = cartRepository.findByUser(user)
                 .orElseGet(() -> createNewCart(user));
 
-        // Kiểm tra xem sản phẩm đã có trong giỏ chưa
+        // ✅ Kiểm tra sản phẩm đã có trong giỏ chưa
         CartItem existingItem = cartItemRepository
-                .findByCartIdAndProductId(cart.getId(), request.getProductId())
+                .findByCartIdAndProductId(cart.getId(), product.getId())
                 .orElse(null);
 
         if (existingItem != null) {
-            // Cập nhật số lượng nếu đã có
+            // Cập nhật số lượng
             existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
             existingItem.calculateSubtotal();
             cartItemRepository.save(existingItem);
         } else {
-            // Thêm mới nếu chưa có
+            // Thêm mới
             CartItem newItem = CartItem.builder()
                     .cart(cart)
-                    .productId(request.getProductId())
-                    .productName(request.getProductName())
-                    .price(request.getPrice())
+                    .product(product)  // ✅ Lưu Product object
                     .quantity(request.getQuantity())
                     .build();
             newItem.calculateSubtotal();
@@ -85,9 +82,6 @@ public class CartService {
         return response;
     }
 
-    /**
-     * Cập nhật số lượng sản phẩm trong giỏ
-     */
     @Transactional
     public CartResponse updateCartItem(String email, Long cartItemId, UpdateCartItemRequest request) {
         User user = userRepository.findByEmail(email)
@@ -99,12 +93,10 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không có trong giỏ hàng"));
 
-        // Kiểm tra quyền sở hữu
         if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new RuntimeException("Bạn không có quyền cập nhật sản phẩm này");
         }
 
-        // Validation
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
             throw new RuntimeException("Số lượng phải lớn hơn 0");
         }
@@ -121,9 +113,6 @@ public class CartService {
         return response;
     }
 
-    /**
-     * Xóa sản phẩm khỏi giỏ hàng
-     */
     @Transactional
     public CartResponse removeCartItem(String email, Long cartItemId) {
         User user = userRepository.findByEmail(email)
@@ -135,7 +124,6 @@ public class CartService {
         CartItem cartItem = cartItemRepository.findById(cartItemId)
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không có trong giỏ hàng"));
 
-        // Kiểm tra quyền sở hữu
         if (!cartItem.getCart().getId().equals(cart.getId())) {
             throw new RuntimeException("Bạn không có quyền xóa sản phẩm này");
         }
@@ -151,9 +139,6 @@ public class CartService {
         return response;
     }
 
-    /**
-     * Xóa toàn bộ giỏ hàng
-     */
     @Transactional
     public CartResponse clearCart(String email) {
         User user = userRepository.findByEmail(email)
@@ -170,7 +155,7 @@ public class CartService {
         return response;
     }
 
-    // Helper methods
+    // ✅ Helper methods
     private Cart createNewCart(User user) {
         Cart cart = Cart.builder()
                 .user(user)
@@ -181,14 +166,20 @@ public class CartService {
 
     private CartResponse convertToResponse(Cart cart) {
         List<CartItemResponse> itemResponses = cart.getItems().stream()
-                .map(item -> CartItemResponse.builder()
-                        .id(item.getId())
-                        .productId(item.getProductId())
-                        .productName(item.getProductName())
-                        .price(item.getPrice())
-                        .quantity(item.getQuantity())
-                        .subtotal(item.getSubtotal())
-                        .build())
+                .map(item -> {
+                    Product product = item.getProduct();
+                    return CartItemResponse.builder()
+                            .id(item.getId())
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .imageUrl(product.getImageUrl())      // ✅ Từ Product
+                            .category(product.getCategory().name())  // ✅ Từ Product
+                            .size(product.getSize().name())       // ✅ Từ Product
+                            .price(BigDecimal.valueOf(product.getPrice()))
+                            .quantity(item.getQuantity())
+                            .subtotal(item.getSubtotal())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return CartResponse.builder()

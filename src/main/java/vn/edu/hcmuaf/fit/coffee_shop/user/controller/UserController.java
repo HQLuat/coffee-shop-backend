@@ -2,6 +2,7 @@ package vn.edu.hcmuaf.fit.coffee_shop.user.controller;
 
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -22,10 +23,15 @@ public class UserController {
     private final RefreshTokenService refreshTokenService;
     private final JwtTokenUtil jwtTokenUtil;
 
-    @PostMapping("/register")
+    @PostMapping
     public ResponseEntity<UserResponse> registerUser(@RequestBody UserRequest request) {
         UserResponse response = userService.registerUser(request);
-        return ResponseEntity.ok(response);
+
+        if (response.getId() == null) {
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/login")
@@ -33,6 +39,11 @@ public class UserController {
         String email = body.get("email");
         String password = body.get("password");
         UserResponse response = userService.login(email, password);
+
+        if (response.getRefreshToken() == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+
         return ResponseEntity.ok(response);
     }
 
@@ -73,10 +84,5 @@ public class UserController {
     public ResponseEntity<?> getMyInfo(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
         return ResponseEntity.ok(Map.of("email", email, "message", "Access granted"));
-    }
-
-    @GetMapping("/hello")
-    public String userHello() {
-        return "Hello USER or ADMIN";
     }
 }

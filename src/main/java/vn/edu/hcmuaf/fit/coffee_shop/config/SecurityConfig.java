@@ -3,6 +3,8 @@ package vn.edu.hcmuaf.fit.coffee_shop.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -31,18 +33,19 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - PHẢI ĐỂ TRƯỚC
+
+                        // Public endpoints
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/refresh").permitAll()
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
 
-                        // Admin endpoints
+                        // Admin endpoints - CHỈ TẠO REFUND CẦN ADMIN
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/orders/*/zalopay/refund").hasRole("ADMIN")
-                        .requestMatchers("/api/orders/zalopay/refund/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")  // ✅ Chỉ POST cần ADMIN
 
-                        // User protected endpoints - ĐỂ SAU public endpoints
+                        // User + Admin endpoints - QUERY THÌ AI CŨNG ĐƯỢC
+                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")  // ✅ GET cho phép USER
                         .requestMatchers(HttpMethod.POST, "/api/users/logout").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")

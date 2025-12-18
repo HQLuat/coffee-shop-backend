@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -219,5 +220,63 @@ public class OrderService {
     public Order getOrderEntity(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
+    }
+
+
+    /**
+     * Verify và confirm order sau khi thanh toán thành công
+     * Lưu zp_trans_id và update status
+     */
+    @Transactional
+    public OrderResponse verifyAndConfirmOrder(Long orderId, String zpTransId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
+
+        System.out.println("📝 Updating order with payment info:");
+        System.out.println("  Order ID: " + orderId);
+        System.out.println("  Order Code: " + order.getOrderCode());
+        System.out.println("  zp_trans_id: " + zpTransId);
+
+        // Lưu zp_trans_id (QUAN TRỌNG cho refund!)
+        if (zpTransId != null && !zpTransId.isEmpty()) {
+            order.setZaloPayZpTransId(zpTransId);
+        } else {
+            throw new RuntimeException("zp_trans_id không hợp lệ");
+        }
+
+        // Update status thành CONFIRMED
+        order.setStatus(OrderStatus.CONFIRMED);
+        order.setConfirmedAt(LocalDateTime.now());
+
+        Order updatedOrder = orderRepository.save(order);
+
+        System.out.println("✅ Order updated successfully");
+
+        return convertToResponse(updatedOrder);
+    }
+
+    /**
+     * Get payment info của order (để debug)
+     */
+    public Map<String, Object> getOrderPaymentInfo(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
+
+        boolean canRefund = order.getZaloPayZpTransId() != null &&
+                !order.getZaloPayZpTransId().isEmpty() &&
+                order.getPaymentMethod() == PaymentMethod.ZALO_PAY;
+
+        return Map.of(
+                "orderId", order.getId(),
+                "orderCode", order.getOrderCode(),
+                "status", order.getStatus().name(),
+                "statusDisplay", order.getStatus().getDisplayName(),
+                "totalAmount", order.getTotalAmount(),
+                "paymentMethod", order.getPaymentMethod().name(),
+                "zaloPayTransId", order.getZaloPayTransId() != null ? order.getZaloPayTransId() : "NULL",
+                "zaloPayZpTransId", order.getZaloPayZpTransId() != null ? order.getZaloPayZpTransId() : "NULL",
+                "canRefund", canRefund,
+                "refundMessage", canRefund ? "✅ Có thể refund" : "❌ Thiếu zp_trans_id hoặc không phải ZaloPay"
+        );
     }
 }

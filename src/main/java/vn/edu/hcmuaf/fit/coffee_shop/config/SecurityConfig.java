@@ -36,9 +36,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/refresh").permitAll()
+                        // verify
                         .requestMatchers(HttpMethod.GET, "/api/users/verify").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/verify_success.html", "/verify_fail.html").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/resend-verification").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/forgot-password").permitAll()
+                        // zalopay
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
 
                         // Admin endpoints - CHỈ TẠO REFUND CẦN ADMIN

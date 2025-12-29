@@ -116,7 +116,7 @@ public class UserService {
                     .id(newUser.getId())
                     .fullName(newUser.getFullName())
                     .email(newUser.getEmail())
-                    .message("Đăng ký thành công? Vui lòng kiểm tra email để xác thực tài khoản. Email có thể nằm trong thư mục Spam.")
+                    .message("Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản. Email có thể nằm trong thư mục Spam.")
                     .build();
             } catch (Exception e) {
                 log.error("Lỗi gửi email: {}", e.getMessage());

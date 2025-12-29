@@ -1,5 +1,6 @@
 package vn.edu.hcmuaf.fit.coffee_shop.user.controller;
 
+import java.io.IOException;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -7,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import vn.edu.hcmuaf.fit.coffee_shop.common.JwtTokenUtil;
 import vn.edu.hcmuaf.fit.coffee_shop.user.dto.UserRequest;
@@ -43,19 +45,13 @@ public class UserController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<?> verifyEmail(@RequestParam("token") String token) {
+    public void verifyEmail(@RequestParam("token") String token, HttpServletResponse response) throws IOException {
         boolean verified = verificationTokenService.verifyToken(token);
 
         if (verified) {
-            return ResponseEntity.ok(Map.of(
-                "success", true,
-                "message", "Xác thực email thành công! Bây giờ bạn có thể đăng nhập."
-            ));
+            response.sendRedirect("/verify_success.html");
         } else {
-            return ResponseEntity.badRequest().body(Map.of(
-                "success", false,
-                "message", "Link xác thực không hợp lệ hoặc đã hết hạn!"
-            ));
+            response.sendRedirect("/verify_fail.html");
         }
     }
 
@@ -164,7 +160,7 @@ public class UserController {
 
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
-        String email = body.get("email");
+        // String email = body.get("email");
 
         return ResponseEntity.ok(Map.of(
             "message", "Nếu email tồn tại, link đặt lại mật khẩu đã được gửi."

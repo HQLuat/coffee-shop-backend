@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xác thực thành công</title>
+    <style>
+        :root {
+            --primary-orange: #f1953e;
+            --dark-brown: #1c0b01;
+            --text-brown: #483c33;
+            --accent-purple: #8800D1;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #fdfbf7;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(28, 11, 1, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            border-top: 5px solid var(--primary-orange);
+        }
+
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(241, 149, 62, 0.15);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px auto;
+        }
+
+        .icon-circle svg {
+            width: 40px;
+            height: 40px;
+            fill: var(--primary-orange);
+        }
+
+        h1 {
+            color: var(--dark-brown);
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        p {
+            color: var(--text-brown);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-purple);
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(136, 0, 209, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="icon-circle">
+            <svg viewBox="0 0 24 24">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+            </svg>
+        </div>
+        <h1>Xác thực thành công!</h1>
+        <p>Tài khoản của bạn đã được kích hoạt. Bây giờ bạn có thể quay lại ứng dụng để đăng nhập và trải nghiệm dịch vụ.</p>
+        
+        <a href="#" class="btn" onclick="window.close()">Đã xong</a>
+    </div>
+
+</body>
+</html>

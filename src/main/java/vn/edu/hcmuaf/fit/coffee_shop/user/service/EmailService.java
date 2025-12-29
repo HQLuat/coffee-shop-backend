@@ -19,7 +19,7 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
-    @Value("${app.base-url:http://localhost:8080")
+    @Value("${app.base-url}")
     private String baseUrl;
 
     public void sendVerificationEmail(String to, String fullName, String token) {
@@ -103,10 +103,11 @@ public class EmailService {
                         display: inline-block; 
                         padding: 12px 30px; 
                         background: #6F4E37; 
-                        color: white; 
-                        text-decoration: none; 
+                        color: white !important;
+                        text-decoration: none;
                         border-radius: 5px; 
                         margin: 20px 0;
+                        cursor: pointer;
                     }
                     .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
                 </style>

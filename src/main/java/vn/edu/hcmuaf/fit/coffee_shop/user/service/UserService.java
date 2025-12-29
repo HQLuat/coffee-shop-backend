@@ -217,6 +217,33 @@ public class UserService {
         }
     }
 
+    @Transactional
+    public boolean resetPassword(User user, String newPassword) {
+        try {
+            if (!isStrongPassword(newPassword)) {
+                log.error("Mật khẩu mới không đủ mạnh cho user: {}", user.getEmail());
+                return false;
+            }
+
+            String encodedPassword = passwordEncoder.encode(newPassword);
+            
+            user.setPassword(encodedPassword);
+            
+            // Reset failed login attempts
+            user.setFailedLoginAttempts(0);
+            user.setLocked(false);
+            user.setLockedUntil(null);
+            
+            userRepository.save(user);
+            
+            log.info("Đã reset password thành công cho user: {}", user.getEmail());
+            return true;
+        } catch (Exception e) {
+            log.error("Lỗi khi reset password cho user {}: {}", user.getEmail(), e.getMessage(), e);
+            return false;
+        }
+    }
+
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return false;

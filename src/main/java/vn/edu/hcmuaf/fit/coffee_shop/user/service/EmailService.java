@@ -191,7 +191,7 @@ public class EmailService {
                         display: inline-block; 
                         padding: 12px 30px; 
                         background: #6F4E37; 
-                        color: white; 
+                        color: white !important; 
                         text-decoration: none; 
                         border-radius: 5px; 
                         margin: 20px 0;

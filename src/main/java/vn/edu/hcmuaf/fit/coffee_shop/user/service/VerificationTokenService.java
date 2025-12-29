@@ -20,12 +20,24 @@ public class VerificationTokenService {
 
     @Transactional
     public VerificationToken createVerificationToken(User user) {
-        tokenRepository.deleteByUser(user);
+        Optional<VerificationToken> existingTokenOpt = tokenRepository.findByUser(user);
 
-        VerificationToken token = VerificationToken.builder()
-            .token(UUID.randomUUID().toString())
-            .user(user)
-            .build();
+        VerificationToken token;
+
+        if (existingTokenOpt.isPresent()) {
+            // update token and expiry date
+            token = existingTokenOpt.get();
+            token.setToken(UUID.randomUUID().toString());
+            token.setExpiryDate(LocalDateTime.now().plusHours(24));
+            token.setVerifiedAt(null);
+        } else {
+            // create new token
+            token = VerificationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusHours(24))
+                .build();
+        }
 
         return tokenRepository.save(token);
     }

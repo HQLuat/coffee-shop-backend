@@ -7,8 +7,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -38,6 +36,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/users/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/users/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/resend-verification").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/users/forgot-password").permitAll()
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
 
                         // Admin endpoints - CHỈ TẠO REFUND CẦN ADMIN

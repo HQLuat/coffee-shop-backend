@@ -181,7 +181,7 @@ public class UserController {
             // check if account is enable
             if (!user.getEnabled()) {
                 return ResponseEntity.ok(Map.of(
-                    "message", "Nếu email tồn tại trong hệ thống, link đặt lại mật khẩu đã được gửi đến email của bạn."
+                    "message", "Tài khoản chưa được xác thực."
                 ));
             }
 

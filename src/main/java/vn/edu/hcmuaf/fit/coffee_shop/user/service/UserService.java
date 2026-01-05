@@ -244,6 +244,92 @@ public class UserService {
         }
     }
 
+    public UserProfileResponse getUserProfile(String email) {
+        User user = userRepository.findByEmail(email.toLowerCase().trim())
+            .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+            return UserProfileResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .address(user.getAddress())
+                .role(user.getRole().name())
+                .enabled(user.getEnabled())
+                .createdAt(user.getCreatedAt())
+                .lastLoginAt(user.getLastLoginAt())
+                .build();
+    }
+
+    @Transactional
+    public UserProfileResponse updateUserProfile(String email, UpdateUserRequest request) {
+        try {
+            User user = userRepository.findByEmail(email.toLowerCase().trim())
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+
+            // Update information
+            if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
+                if (request.getFullName().trim().length() < 2) {
+                    throw new RuntimeException("Họ tên phải có ít nhất 2 ký tự");
+                }
+                user.setFullName(request.getFullName().trim());
+            }
+
+            if (request.getPhoneNumber() != null) {
+                user.setPhoneNumber(request.getPhoneNumber().trim());
+            }
+
+            if (request.getAddress() != null) {
+                user.setAddress(request.getAddress().trim());
+            }
+
+            // Change password
+            if (request.getCurrentPassword() != null && !request.getCurrentPassword().isEmpty()) {
+                if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                    throw new RuntimeException("Mật khẩu hiện tại không đúng");
+                }
+
+                if (request.getNewPassword() == null || request.getNewPassword().isEmpty()) {
+                    throw new RuntimeException("Vui lòng nhập mật khẩu mới");
+                }
+
+                if (request.getConfirmNewPassword() == null || !request.getNewPassword().equals(request.getConfirmNewPassword())) {
+                    throw new RuntimeException("Mật khẩu xác nhận không khớp");
+                }
+
+                if (!isStrongPassword(request.getNewPassword())) {
+                    throw new RuntimeException("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt");
+                }
+
+                user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+
+                refreshTokenService.deleteByUser(user);
+            }
+
+            User updatedUser = userRepository.save(user);
+
+            return UserProfileResponse.builder()
+                .id(updatedUser.getId())
+                .fullName(updatedUser.getFullName())
+                .email(updatedUser.getEmail())
+                .phoneNumber(updatedUser.getPhoneNumber())
+                .address(updatedUser.getAddress())
+                .role(updatedUser.getRole().name())
+                .enabled(updatedUser.getEnabled())
+                .createdAt(updatedUser.getCreatedAt())
+                .lastLoginAt(updatedUser.getLastLoginAt())
+                .message("Cập nhật thông tin thành công!")
+                .build();
+        } catch (RuntimeException e) {
+            log.error("Lỗi cập nhật user {}: {}", email, e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("Lỗi cập nhật user: {}", e.getMessage(), e);
+            throw new RuntimeException("Có lỗi xảy ra khi cập nhật thông tin!");
+        }
+    }
+
+    // Helpers
     private boolean isValidEmail(String email) {
         if (email == null || email.trim().isEmpty()) {
             return false;

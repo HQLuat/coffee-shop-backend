@@ -30,6 +30,12 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Column
+    private String phoneNumber;
+
+    @Column(columnDefinition = "TEXT")
+    private String address;
+
     // ======== email verification ========
     @Column(nullable = false)
     @Builder.Default

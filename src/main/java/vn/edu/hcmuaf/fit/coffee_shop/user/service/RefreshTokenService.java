@@ -24,6 +24,7 @@ public class RefreshTokenService {
     public RefreshToken createRefreshToken(User user) {
         // Xóa refresh token cũ nếu có
         refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.flush();
         
         RefreshToken refreshToken = RefreshToken.builder()
                 .user(user)

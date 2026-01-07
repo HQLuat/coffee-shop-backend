@@ -58,6 +58,16 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")
 
+                        // Voucher endpoints - PUBLIC
+                        .requestMatchers(HttpMethod.GET, "/api/vouchers/active").permitAll()
+                        // Voucher endpoints - ADMIN ONLY (CRUD)
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/vouchers/*").hasRole("ADMIN")
+                        // Voucher endpoints - USER + ADMIN (apply, check)
+                        .requestMatchers(HttpMethod.GET, "/api/vouchers/*").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyRole("USER", "ADMIN")
+
                         // Tất cả request khác
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

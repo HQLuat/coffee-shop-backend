@@ -207,6 +207,7 @@ public class UserService {
                 .email(user.getEmail())
                 .token(accessToken)
                 .refreshToken(refreshToken.getToken())
+                .role(user.getRole().name())
                 .message("Đăng nhập thành công!")
                 .build();
         } catch (Exception e) {

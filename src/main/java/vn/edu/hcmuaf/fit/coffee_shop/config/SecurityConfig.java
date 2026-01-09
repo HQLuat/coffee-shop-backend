@@ -52,6 +52,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")  // ✅ Chỉ POST cần ADMIN
 
+                        // Admin Order Management
+                        .requestMatchers(HttpMethod.GET, "/api/admin/orders/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/orders/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/orders/**").hasRole("ADMIN")
+
+                        // Refund - chỉ ADMIN được tạo
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")
+
                         // User + Admin endpoints - QUERY THÌ AI CŨNG ĐƯỢC
                         .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")  // ✅ GET cho phép USER
                         .requestMatchers(HttpMethod.POST, "/api/users/logout").hasAnyRole("USER", "ADMIN")

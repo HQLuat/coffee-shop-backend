@@ -343,7 +343,7 @@ public class UserService {
 
             String[] trustedDomains = {
                 "gmail.com", "yahoo.com", "outlook.com", "hotmail.com",
-                "icloud.com", "protonmail.com", "zoho.com", "aol.com"
+                "icloud.com", "protonmail.com", "zoho.com", "aol.com", "st.hcmuaf.edu.vn"
             };
 
             for (String trustedDomain : trustedDomains) {

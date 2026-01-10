@@ -32,51 +32,53 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/users").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/refresh").permitAll()
-                        // Email verification
-                        .requestMatchers(HttpMethod.GET, "/api/users/verify").permitAll()
+                        // ===== PUBLIC ENDPOINTS =====
+                        // Authentication endpoints
+                        .requestMatchers(HttpMethod.POST, "/api/auth").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/resend-verification").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/reset-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
+                        // Static pages
                         .requestMatchers(HttpMethod.GET, "/verify_success.html", "/verify_fail.html").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/resend-verification").permitAll()
-                        // Password reset
-                        .requestMatchers(HttpMethod.POST, "/api/users/forgot-password").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/users/reset-password").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/users/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/reset_password.html", "/reset_password_fail.html").permitAll()
                         // ZaloPay
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
-
-                        // Admin endpoints - CHỈ TẠO REFUND CẦN ADMIN
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")  // ✅ Chỉ POST cần ADMIN
-
-                        // Admin Order Management
-                        .requestMatchers(HttpMethod.GET, "/api/admin/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/admin/orders/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/admin/orders/**").hasRole("ADMIN")
-
-                        // Refund - chỉ ADMIN được tạo
-                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")
-
-                        // User + Admin endpoints - QUERY THÌ AI CŨNG ĐƯỢC
-                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")  // ✅ GET cho phép USER
-                        .requestMatchers(HttpMethod.POST, "/api/users/logout").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")
-
-                        // Voucher endpoints - PUBLIC
+                        // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/active").permitAll()
-                        // Voucher endpoints - ADMIN ONLY (CRUD)
+
+                        // ===== ADMIN ONLY ENDPOINTS =====
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // User Management
+                        .requestMatchers(HttpMethod.GET, "/api/admin/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/admin/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/users/**").hasRole("ADMIN")
+                        // Refund
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")  // ✅ Chỉ POST cần ADMIN
+                        // Voucher
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vouchers/*").hasRole("ADMIN")
-                        // Voucher endpoints - USER + ADMIN (apply, check)
+
+                        // ===== USER + ADMIN ENDPOINTS =====
+                        // Auth
+                        .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasAnyRole("USER", "ADMIN")
+                        // Profile
+                        .requestMatchers("/api/profile/**").hasAnyRole("USER", "ADMIN")
+                        // Order
+                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")  // ✅ GET cho phép USER
+                        .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
+                        // Cart
+                        .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")
+                        // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/*").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyRole("USER", "ADMIN")
 
-                        // Tất cả request khác
+                        // ===== DEFAULT =====
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();

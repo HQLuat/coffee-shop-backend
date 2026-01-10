@@ -31,7 +31,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Xác thực tài khoản Coffee Shop");
 
-            String verificationLink = baseUrl + "/api/users/verify?token=" + token;
+            String verificationLink = baseUrl + "/api/auth/verify?token=" + token;
 
             String htmlContent = buildVerificationEmailHtml(fullName, verificationLink);
             helper.setText(htmlContent, true);
@@ -74,7 +74,7 @@ public class EmailService {
             helper.setTo(to);
             helper.setSubject("Yêu cầu đặt lại mật khẩu");
 
-            String resetLink = baseUrl + "/api/users/reset-password?token=" + resetToken;
+            String resetLink = baseUrl + "/api/auth/reset-password?token=" + resetToken;
 
             String htmlContent = buildPasswordResetEmailHtml(fullName, resetLink);
             helper.setText(htmlContent, true);

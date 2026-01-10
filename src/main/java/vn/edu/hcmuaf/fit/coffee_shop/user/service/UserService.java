@@ -207,6 +207,7 @@ public class UserService {
                 .email(user.getEmail())
                 .token(accessToken)
                 .refreshToken(refreshToken.getToken())
+                .role(user.getRole().name())
                 .message("Đăng nhập thành công!")
                 .build();
         } catch (Exception e) {
@@ -343,7 +344,7 @@ public class UserService {
 
             String[] trustedDomains = {
                 "gmail.com", "yahoo.com", "outlook.com", "hotmail.com",
-                "icloud.com", "protonmail.com", "zoho.com", "aol.com"
+                "icloud.com", "protonmail.com", "zoho.com", "aol.com", "st.hcmuaf.edu.vn"
             };
 
             for (String trustedDomain : trustedDomains) {

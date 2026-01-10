@@ -24,6 +24,7 @@ public class PasswordResetService {
     public PasswordResetToken createPasswordResetToken(User user) {
         // delete old token
         tokenRepository.deleteByUser(user);
+        tokenRepository.flush();
 
         PasswordResetToken token = PasswordResetToken.builder()
             .token(UUID.randomUUID().toString())

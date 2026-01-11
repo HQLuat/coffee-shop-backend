@@ -26,17 +26,11 @@ public class AdminUserService {
     private final EmailService emailService;
     private final RefreshTokenService refreshTokenService;
 
-    /**
-     * Lấy tất cả user với phân trang
-     */
     public Page<AdminUserResponse> getAllUsers(Pageable pageable) {
         Page<User> users = userRepository.findAll(pageable);
         return users.map(this::convertToResponse);
     }
 
-    /**
-     * Tìm kiếm user theo từ khóa
-     */
     public List<AdminUserResponse> searchUsers(String keyword) {
         List<User> users = userRepository.searchByKeyword(keyword.trim().toLowerCase());
         return users.stream()
@@ -44,18 +38,12 @@ public class AdminUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lấy chi tiết user
-     */
     public AdminUserResponse getUserDetails(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
         return convertToResponse(user);
     }
 
-    /**
-     * Lấy user theo role
-     */
     public List<AdminUserResponse> getUsersByRole(Role role) {
         List<User> users = userRepository.findByRole(role);
         return users.stream()
@@ -63,9 +51,6 @@ public class AdminUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lấy user đã bị khóa
-     */
     public List<AdminUserResponse> getLockedUsers() {
         List<User> users = userRepository.findByLocked(true);
         return users.stream()
@@ -73,9 +58,6 @@ public class AdminUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Lấy user chưa xác thực
-     */
     public List<AdminUserResponse> getUnverifiedUsers() {
         List<User> users = userRepository.findByEnabled(false);
         return users.stream()
@@ -83,9 +65,6 @@ public class AdminUserService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Tạo user mới
-     */
     @Transactional
     public AdminUserResponse createUser(AdminCreateUserRequest request) {
         // Validate email
@@ -123,7 +102,6 @@ public class AdminUserService {
         // Send welcome email
         if (Boolean.TRUE.equals(request.getSendWelcomeEmail())) {
             try {
-                // TODO: Create welcome email template
                 log.info("Sending welcome email to: {}", savedUser.getEmail());
             } catch (Exception e) {
                 log.error("Failed to send welcome email: {}", e.getMessage());
@@ -133,9 +111,6 @@ public class AdminUserService {
         return convertToResponse(savedUser);
     }
 
-    /**
-     * Cập nhật user
-     */
     @Transactional
     public AdminUserResponse updateUser(Long userId, AdminUpdateUserRequest request) {
         User user = userRepository.findById(userId)
@@ -191,9 +166,6 @@ public class AdminUserService {
         return convertToResponse(updatedUser);
     }
 
-    /**
-     * Thay đổi role
-     */
     @Transactional
     public AdminUserResponse changeUserRole(Long userId, Role role) {
         User user = userRepository.findById(userId)
@@ -207,9 +179,6 @@ public class AdminUserService {
         return convertToResponse(updatedUser);
     }
 
-    /**
-     * Khóa/Mở khóa user
-     */
     @Transactional
     public AdminUserResponse toggleLockUser(Long userId, Boolean locked) {
         User user = userRepository.findById(userId)
@@ -231,9 +200,6 @@ public class AdminUserService {
         return convertToResponse(updatedUser);
     }
 
-    /**
-     * Xác thực email cho user
-     */
     @Transactional
     public AdminUserResponse verifyUserEmail(Long userId) {
         User user = userRepository.findById(userId)
@@ -247,9 +213,6 @@ public class AdminUserService {
         return convertToResponse(updatedUser);
     }
 
-    /**
-     * Reset mật khẩu
-     */
     @Transactional
     public void resetUserPassword(Long userId, String newPassword) {
         User user = userRepository.findById(userId)
@@ -273,15 +236,11 @@ public class AdminUserService {
         log.info("Admin reset password for user: {}", user.getEmail());
     }
 
-    /**
-     * Xóa user (soft delete - lock account)
-     */
     @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User không tồn tại"));
 
-        // Không cho phép xóa ADMIN cuối cùng
         if (user.getRole() == Role.ADMIN) {
             long adminCount = userRepository.countByRole(Role.ADMIN);
             if (adminCount <= 1) {
@@ -299,9 +258,6 @@ public class AdminUserService {
         log.info("Admin deleted user: {}", user.getEmail());
     }
 
-    /**
-     * Thống kê user
-     */
     public UserStatisticsResponse getUserStatistics(LocalDate startDate, LocalDate endDate) {
         LocalDateTime start = startDate != null 
             ? startDate.atStartOfDay() 
@@ -352,6 +308,7 @@ public class AdminUserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .enabled(user.getEnabled())
                 .locked(user.getLocked())

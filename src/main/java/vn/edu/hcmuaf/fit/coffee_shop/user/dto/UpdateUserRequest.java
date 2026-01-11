@@ -16,6 +16,8 @@ public class UpdateUserRequest {
 
     private String address;
 
+    private String avatarUrl;
+
     private String currentPassword;
 
     private String newPassword;

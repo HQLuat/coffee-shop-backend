@@ -205,6 +205,7 @@ public class UserService {
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
                 .token(accessToken)
                 .refreshToken(refreshToken.getToken())
                 .role(user.getRole().name())
@@ -255,6 +256,7 @@ public class UserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .enabled(user.getEnabled())
                 .createdAt(user.getCreatedAt())
@@ -282,6 +284,23 @@ public class UserService {
 
             if (request.getAddress() != null) {
                 user.setAddress(request.getAddress().trim());
+            }
+
+            // Update avatar URL
+            if (request.getAvatarUrl() != null) {
+                // Validate URL format
+                String avatarUrl = request.getAvatarUrl().trim();
+                if (!avatarUrl.isEmpty()) {
+                    // Validate if it's a valid URL
+                    if (isValidUrl(avatarUrl)) {
+                        user.setAvatarUrl(avatarUrl);
+                    } else {
+                        throw new RuntimeException("URL ảnh đại diện không hợp lệ");
+                    }
+                } else {
+                    // Allow clearing avatar by sending empty string
+                    user.setAvatarUrl(null);
+                }
             }
 
             // Change password
@@ -364,5 +383,25 @@ public class UserService {
             return false;
         }
         return PASSWORD_PATTERN.matcher(password).matches();
+    }
+
+    private boolean isValidUrl(String url) {
+        try {
+            // Basic URL validation
+            if (url == null || url.trim().isEmpty()) {
+                return false;
+            }
+
+            // Check if starts with http:// or https://
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                return false;
+            }
+
+            java.net.URL urlObj = new java.net.URL(url);
+            urlObj.toURI();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

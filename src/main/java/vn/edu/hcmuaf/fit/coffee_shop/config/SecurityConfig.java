@@ -77,7 +77,9 @@ public class SecurityConfig {
                         // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/*").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyRole("USER", "ADMIN")
-
+                        // Reviews - POST, PUT cho USER + ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("USER", "ADMIN")
                         // ===== DEFAULT =====
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);

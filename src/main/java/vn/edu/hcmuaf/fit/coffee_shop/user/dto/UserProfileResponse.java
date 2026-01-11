@@ -15,6 +15,7 @@ public class UserProfileResponse {
     private String email;
     private String phoneNumber;
     private String address;
+    private String avatarUrl;
     private String role;
     private Boolean enabled;
     private LocalDateTime createdAt;

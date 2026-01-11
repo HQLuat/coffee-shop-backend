@@ -14,6 +14,7 @@ public class AdminUserResponse {
     private String email;
     private String phoneNumber;
     private String address;
+    private String avatarUrl;
     private String role;
     private Boolean enabled;
     private Boolean locked;

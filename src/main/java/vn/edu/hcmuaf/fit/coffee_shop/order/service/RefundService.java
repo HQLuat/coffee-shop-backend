@@ -44,7 +44,7 @@ public class RefundService {
      */
     @Transactional
     public RefundResponse createRefund(Long orderId, Long amount, String description) throws Exception {
-        log.info("🔵 Starting refund process for order #{}", orderId);
+        log.info("Starting refund process for order #{}", orderId);
 
         // 1. Validate
         Order order = orderRepository.findById(orderId)
@@ -68,7 +68,7 @@ public class RefundService {
             Integer returnCode = (Integer) responseBody.get("return_code");
             String returnMessage = (String) responseBody.get("return_message");
 
-            log.info("📥 ZaloPay response: return_code={}, message={}", returnCode, returnMessage);
+            log.info("ZaloPay response: return_code={}, message={}", returnCode, returnMessage);
 
             // 5. Update status based on response
             refund.setReturnCode(returnCode);
@@ -76,19 +76,16 @@ public class RefundService {
             refundRepository.save(refund);
 
             if (returnCode == 1) {
-                // ✅ SUCCESS - Update immediately
-                log.info("✅ Refund SUCCESS - Updating order status");
+                log.info("Refund SUCCESS - Updating order status");
                 updateRefundAndOrderStatus(refund, order, RefundStatus.SUCCESS);
 
             } else if (returnCode == 2) {
-                // ⏳ PROCESSING - Will be handled by scheduled job
-                log.info("⏳ Refund PROCESSING - Will verify later");
+                log.info("Refund PROCESSING - Will verify later");
                 refund.setStatus(RefundStatus.PROCESSING);
                 refundRepository.save(refund);
 
             } else {
-                // ❌ FAILED
-                log.error("❌ Refund FAILED: {}", returnMessage);
+                log.error("Refund FAILED: {}", returnMessage);
                 refund.setStatus(RefundStatus.FAILED);
                 refundRepository.save(refund);
             }
@@ -96,7 +93,7 @@ public class RefundService {
             return buildRefundResponse(refund, returnCode, returnMessage);
 
         } catch (Exception e) {
-            log.error("❌ Error calling ZaloPay refund API", e);
+            log.error("Error calling ZaloPay refund API", e);
             refund.setStatus(RefundStatus.FAILED);
             refund.setReturnMessage("Error: " + e.getMessage());
             refundRepository.save(refund);
@@ -133,17 +130,17 @@ public class RefundService {
                 Integer returnCode = (Integer) status.get("return_code");
 
                 if (returnCode == 1) {
-                    log.info("✅ Refund {} is now SUCCESS", refund.getRefundId());
+                    log.info("Refund {} is now SUCCESS", refund.getRefundId());
                     updateRefundAndOrderStatus(refund, refund.getOrder(), RefundStatus.SUCCESS);
 
                 } else if (returnCode == 3) {
-                    log.error("❌ Refund {} FAILED", refund.getRefundId());
+                    log.error("Refund {} FAILED", refund.getRefundId());
                     refund.setStatus(RefundStatus.FAILED);
                     refundRepository.save(refund);
                 }
 
             } catch (Exception e) {
-                log.error("❌ Error verifying refund {}", refund.getRefundId(), e);
+                log.error("Error verifying refund {}", refund.getRefundId(), e);
             }
         }
     }
@@ -156,7 +153,7 @@ public class RefundService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void updateRefundAndOrderStatus(RefundTransaction refund, Order order, RefundStatus status) {
-        log.info("📝 Updating refund #{} and order #{} to {}",
+        log.info("Updating refund #{} and order #{} to {}",
                 refund.getId(), order.getId(), status);
 
         // Update refund
@@ -165,19 +162,19 @@ public class RefundService {
         RefundTransaction savedRefund = refundRepository.save(refund);
         refundRepository.flush();
 
-        log.info("✅ Refund saved with status: {}", savedRefund.getStatus());
+        log.info("Refund saved with status: {}", savedRefund.getStatus());
 
         // Update order
         order.setStatus(OrderStatus.CANCELLED);
         Order savedOrder = orderRepository.save(order);
         orderRepository.flush();
 
-        log.info("✅ Order #{} updated to status: {}", savedOrder.getId(), savedOrder.getStatus());
+        log.info("Order #{} updated to status: {}", savedOrder.getId(), savedOrder.getStatus());
 
         // Verify
         Order verifyOrder = orderRepository.findById(order.getId()).orElse(null);
         if (verifyOrder != null) {
-            log.info("✅ VERIFIED - Order #{} status in DB: {}",
+            log.info("VERIFIED - Order #{} status in DB: {}",
                     verifyOrder.getId(), verifyOrder.getStatus());
         }
     }
@@ -247,7 +244,7 @@ public class RefundService {
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(formData, headers);
 
-        log.info("📤 Sending refund request to ZaloPay");
+        log.info("Sending refund request to ZaloPay");
         ResponseEntity<Map> response = restTemplate.postForEntity(
                 ZALOPAY_REFUND_ENDPOINT, request, Map.class);
 

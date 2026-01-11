@@ -52,11 +52,11 @@ public class ReviewServiceImpl implements ReviewService {
             .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại."));
 
         // 2. NGHIỆP VỤ: Kiểm tra người dùng đã mua sản phẩm và đơn hàng đã hoàn thành (DELIVERED)
-        boolean hasPurchased = orderItemRepository.hasUserBoughtProduct(userId, request.getProductId());
+        // boolean hasPurchased = orderItemRepository.hasUserBoughtProduct(userId, request.getProductId());
         
-        if (!hasPurchased) {
-             throw new RuntimeException("Bạn chỉ có thể đánh giá sản phẩm đã được giao hàng thành công.");
-        }
+        // if (!hasPurchased) {
+        //      throw new RuntimeException("Bạn chỉ có thể đánh giá sản phẩm đã được giao hàng thành công.");
+        // }
         
         // 3. NGHIỆP VỤ: Kiểm tra đã đánh giá sản phẩm này chưa
         if (reviewRepository.existsByUserIdAndProductId(userId, request.getProductId())) {

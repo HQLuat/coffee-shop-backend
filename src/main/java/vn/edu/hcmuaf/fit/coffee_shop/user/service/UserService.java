@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class UserService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
     private final VerificationTokenService verificationTokenService;
+    private final CloudinaryService cloudinaryService;
 
     // Regex patterns for validation
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -265,7 +267,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserProfileResponse updateUserProfile(String email, UpdateUserRequest request) {
+    public UserProfileResponse updateUserProfile(String email, UpdateUserRequest request, MultipartFile avatarFile) {
         try {
             User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
@@ -286,20 +288,30 @@ public class UserService {
                 user.setAddress(request.getAddress().trim());
             }
 
-            // Update avatar URL
-            if (request.getAvatarUrl() != null) {
-                // Validate URL format
-                String avatarUrl = request.getAvatarUrl().trim();
-                if (!avatarUrl.isEmpty()) {
-                    // Validate if it's a valid URL
-                    if (isValidUrl(avatarUrl)) {
-                        user.setAvatarUrl(avatarUrl);
-                    } else {
-                        throw new RuntimeException("URL ảnh đại diện không hợp lệ");
+            if (Boolean.TRUE.equals(request.getDeleteAvatar())) {
+                // Remove old avatar
+                if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                    cloudinaryService.deleteAvatar(user.getAvatarUrl());
+                }
+                user.setAvatarUrl(null);
+                log.info("Đã xóa avatar cho user: {}", email);
+            }
+            else if (avatarFile != null && !avatarFile.isEmpty()) {
+                try {
+                    // Remove old avatar
+                    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                        cloudinaryService.deleteAvatar(user.getAvatarUrl());
+                        log.info("Đã xóa avatar cũ cho user: {}", email);
                     }
-                } else {
-                    // Allow clearing avatar by sending empty string
-                    user.setAvatarUrl(null);
+                    
+                    // Upload new avatar
+                    String newAvatarUrl = cloudinaryService.uploadAvatar(avatarFile);
+                    user.setAvatarUrl(newAvatarUrl);
+                    log.info("Đã upload avatar mới cho user: {}", email);
+                    
+                } catch (Exception e) {
+                    log.error("Lỗi upload avatar: {}", e.getMessage());
+                    throw new RuntimeException("Không thể upload avatar: " + e.getMessage());
                 }
             }
 
@@ -334,6 +346,7 @@ public class UserService {
                 .email(updatedUser.getEmail())
                 .phoneNumber(updatedUser.getPhoneNumber())
                 .address(updatedUser.getAddress())
+                .avatarUrl(updatedUser.getAvatarUrl())
                 .role(updatedUser.getRole().name())
                 .enabled(updatedUser.getEnabled())
                 .createdAt(updatedUser.getCreatedAt())

@@ -16,7 +16,7 @@ public class UpdateUserRequest {
 
     private String address;
 
-    private String avatarUrl;
+    private Boolean deleteAvatar;
 
     private String currentPassword;
 

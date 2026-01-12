@@ -3,9 +3,11 @@ package vn.edu.hcmuaf.fit.coffee_shop.user.controller;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -30,15 +32,35 @@ public class UserProfileController {
         }
     }
 
-    @PutMapping
+    @PutMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> updateUserProfile(
-            @Valid @RequestBody UpdateUserRequest request, 
+            @RequestParam(value = "fullName", required = false) String fullName,
+            @RequestParam(value = "phoneNumber", required = false) String phoneNumber,
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "avatar", required = false) MultipartFile avatarFile,
+            @RequestParam(value = "deleteAvatar", required = false) Boolean deleteAvatar,
+            @RequestParam(value = "currentPassword", required = false) String currentPassword,
+            @RequestParam(value = "newPassword", required = false) String newPassword,
+            @RequestParam(value = "confirmNewPassword", required = false) String confirmNewPassword,
             Authentication authentication) {
         try {
             String email = (String) authentication.getPrincipal();
-            UserProfileResponse response = userService.updateUserProfile(email, request);
+            
+            // Build request object
+            UpdateUserRequest request = new UpdateUserRequest();
+            request.setFullName(fullName);
+            request.setPhoneNumber(phoneNumber);
+            request.setAddress(address);
+            request.setDeleteAvatar(deleteAvatar);
+            request.setCurrentPassword(currentPassword);
+            request.setNewPassword(newPassword);
+            request.setConfirmNewPassword(confirmNewPassword);
+            
+            // Call service với avatar file
+            UserProfileResponse response = userService.updateUserProfile(email, request, avatarFile);
 
             return ResponseEntity.ok(response);
+            
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(Map.of(
                 "message", e.getMessage()
@@ -83,7 +105,7 @@ public class UserProfileController {
             request.setNewPassword(newPassword);
             request.setConfirmNewPassword(confirmPassword);
 
-            userService.updateUserProfile(email, request);
+            userService.updateUserProfile(email, request, null);
 
             return ResponseEntity.ok(Map.of(
                 "message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."

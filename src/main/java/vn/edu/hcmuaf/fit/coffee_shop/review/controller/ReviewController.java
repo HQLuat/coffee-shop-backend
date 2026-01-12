@@ -7,13 +7,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import vn.edu.hcmuaf.fit.coffee_shop.common.JwtTokenUtil;
 import vn.edu.hcmuaf.fit.coffee_shop.review.dto.ReviewRequest;
 import vn.edu.hcmuaf.fit.coffee_shop.review.dto.ReviewResponse;
 import vn.edu.hcmuaf.fit.coffee_shop.review.service.ReviewService;
+import vn.edu.hcmuaf.fit.coffee_shop.user.entity.User;
+import vn.edu.hcmuaf.fit.coffee_shop.user.repository.UserRepository;
 
 @RestController
 @RequestMapping("/api/reviews")
@@ -21,21 +21,14 @@ import vn.edu.hcmuaf.fit.coffee_shop.review.service.ReviewService;
 public class ReviewController {
     
     private final ReviewService reviewService;
-    private final JwtTokenUtil jwtTokenUtil;  // THÊM DEPENDENCY NÀY
+    private final UserRepository userRepository;  // THÊM DEPENDENCY
     
-    // SỬA HÀM NÀY - Lấy userId từ JWT token trong header
-    private Long getUserIdFromRequest(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            try {
-                // Trích xuất userId từ claim "id" trong token
-                return jwtTokenUtil.extractClaim(token, claims -> claims.get("id", Long.class));
-            } catch (Exception e) {
-                throw new RuntimeException("Token không hợp lệ hoặc thiếu thông tin User ID.");
-            }
-        }
-        throw new RuntimeException("Thiếu token xác thực.");
+    // SỬA HÀM NÀY - Lấy userId từ email trong principal
+    private Long getUserIdFromAuthentication(Authentication authentication) {
+        String email = authentication.getName();  // Lấy email từ principal
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
+        return user.getId();
     }
 
     // --- GET: Lấy danh sách đánh giá sản phẩm ---
@@ -49,9 +42,9 @@ public class ReviewController {
     @PostMapping
     public ResponseEntity<ReviewResponse> addReview(
         @Valid @RequestBody ReviewRequest request,
-        HttpServletRequest httpRequest  // ĐỔI PARAMETER
+        Authentication authentication
     ) {
-        Long userId = getUserIdFromRequest(httpRequest);  // Lấy userId từ token
+        Long userId = getUserIdFromAuthentication(authentication);
         ReviewResponse response = reviewService.addReview(userId, request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -61,9 +54,9 @@ public class ReviewController {
     public ResponseEntity<ReviewResponse> updateReview(
         @PathVariable Long reviewId,
         @Valid @RequestBody ReviewRequest request,
-        HttpServletRequest httpRequest  // ĐỔI PARAMETER
+        Authentication authentication
     ) {
-        Long userId = getUserIdFromRequest(httpRequest);
+        Long userId = getUserIdFromAuthentication(authentication);
         ReviewResponse response = reviewService.updateReview(userId, reviewId, request);
         return ResponseEntity.ok(response);
     }
@@ -72,9 +65,9 @@ public class ReviewController {
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> deleteReview(
         @PathVariable Long reviewId,
-        HttpServletRequest httpRequest  // ĐỔI PARAMETER
+        Authentication authentication
     ) {
-        Long userId = getUserIdFromRequest(httpRequest);
+        Long userId = getUserIdFromAuthentication(authentication);
         reviewService.deleteReview(userId, reviewId);
         return ResponseEntity.noContent().build();
     }

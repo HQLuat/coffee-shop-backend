@@ -15,5 +15,5 @@ public class ProductResponse {
     private String category;
     private String size;
     private Double rating;
+    private String description;  // THÊM DÒNG NÀY
 }
-

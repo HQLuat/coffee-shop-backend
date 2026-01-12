@@ -56,7 +56,7 @@ public class UserProfileController {
             request.setNewPassword(newPassword);
             request.setConfirmNewPassword(confirmNewPassword);
             
-            // Call service với avatar file
+            // Call service
             UserProfileResponse response = userService.updateUserProfile(email, request, avatarFile);
 
             return ResponseEntity.ok(response);

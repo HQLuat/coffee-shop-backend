@@ -18,13 +18,10 @@ public class CloudinaryService {
 
     private final Cloudinary cloudinary;
     
-    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
     private static final String[] ALLOWED_FORMATS = {"jpg", "jpeg", "png", "gif", "webp"};
     private static final String FOLDER_NAME = "coffee-shop/avatars";
 
-    /**
-     * Upload avatar lên Cloudinary
-     */
     public String uploadAvatar(MultipartFile file) throws IOException {
         validateFile(file);
         
@@ -32,7 +29,6 @@ public class CloudinaryService {
             // Generate unique public_id
             String publicId = FOLDER_NAME + "/" + UUID.randomUUID().toString();
             
-            // Upload với các options
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
                     ObjectUtils.asMap(
                             "public_id", publicId,
@@ -46,19 +42,15 @@ public class CloudinaryService {
                     ));
             
             String imageUrl = (String) uploadResult.get("secure_url");
-            log.info("✅ Uploaded avatar successfully: {}", imageUrl);
             
             return imageUrl;
             
         } catch (IOException e) {
-            log.error("❌ Error uploading avatar to Cloudinary: {}", e.getMessage());
+            log.error("Error uploading avatar to Cloudinary: {}", e.getMessage());
             throw new IOException("Không thể upload ảnh lên Cloudinary: " + e.getMessage());
         }
     }
 
-    /**
-     * Xóa avatar cũ từ Cloudinary
-     */
     public void deleteAvatar(String imageUrl) {
         if (imageUrl == null || imageUrl.isEmpty()) {
             return;
@@ -70,18 +62,13 @@ public class CloudinaryService {
             
             if (publicId != null && !publicId.isEmpty()) {
                 Map result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
-                log.info("🗑️ Deleted old avatar: {} - Result: {}", publicId, result.get("result"));
             }
             
         } catch (Exception e) {
-            log.error("❌ Error deleting avatar from Cloudinary: {}", e.getMessage());
-            // Không throw exception vì việc xóa ảnh cũ fail không ảnh hưởng đến upload ảnh mới
+            log.error("Error deleting avatar from Cloudinary: {}", e.getMessage());
         }
     }
 
-    /**
-     * Validate file upload
-     */
     private void validateFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IOException("File không được để trống");
@@ -119,24 +106,17 @@ public class CloudinaryService {
         }
     }
 
-    /**
-     * Extract public_id from Cloudinary URL
-     * Example: https://res.cloudinary.com/demo/image/upload/v1234567890/coffee-shop/avatars/abc123.jpg
-     * -> coffee-shop/avatars/abc123
-     */
     private String extractPublicId(String imageUrl) {
         try {
             if (!imageUrl.contains("cloudinary.com")) {
                 return null;
             }
             
-            // Tìm vị trí của "/upload/"
             int uploadIndex = imageUrl.indexOf("/upload/");
             if (uploadIndex == -1) {
                 return null;
             }
             
-            // Bỏ qua phần version (vXXXXXXXXXX)
             String afterUpload = imageUrl.substring(uploadIndex + 8);
             int slashIndex = afterUpload.indexOf("/");
             
@@ -144,7 +124,7 @@ public class CloudinaryService {
                 afterUpload = afterUpload.substring(slashIndex + 1);
             }
             
-            // Loại bỏ extension (.jpg, .png, etc.)
+            // Remove extension (.jpg, .png, etc.)
             int lastDotIndex = afterUpload.lastIndexOf(".");
             if (lastDotIndex != -1) {
                 afterUpload = afterUpload.substring(0, lastDotIndex);
@@ -158,9 +138,6 @@ public class CloudinaryService {
         }
     }
 
-    /**
-     * Get file extension
-     */
     private String getFileExtension(String filename) {
         int lastDotIndex = filename.lastIndexOf(".");
         if (lastDotIndex == -1) {

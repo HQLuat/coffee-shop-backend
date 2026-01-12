@@ -272,7 +272,7 @@ public class UserService {
             User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-            // Update thông tin cơ bản
+            // Update information
             if (request.getFullName() != null && !request.getFullName().trim().isEmpty()) {
                 if (request.getFullName().trim().length() < 2) {
                     throw new RuntimeException("Họ tên phải có ít nhất 2 ký tự");
@@ -288,26 +288,23 @@ public class UserService {
                 user.setAddress(request.getAddress().trim());
             }
 
-            // ✅ XỬ LÝ AVATAR
-            // 1. Nếu có yêu cầu xóa avatar
             if (Boolean.TRUE.equals(request.getDeleteAvatar())) {
-                // Xóa avatar cũ trên Cloudinary
+                // Remove old avatar
                 if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
                     cloudinaryService.deleteAvatar(user.getAvatarUrl());
                 }
                 user.setAvatarUrl(null);
                 log.info("Đã xóa avatar cho user: {}", email);
             }
-            // 2. Nếu có upload avatar mới
             else if (avatarFile != null && !avatarFile.isEmpty()) {
                 try {
-                    // Xóa avatar cũ nếu có
+                    // Remove old avatar
                     if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
                         cloudinaryService.deleteAvatar(user.getAvatarUrl());
                         log.info("Đã xóa avatar cũ cho user: {}", email);
                     }
                     
-                    // Upload avatar mới
+                    // Upload new avatar
                     String newAvatarUrl = cloudinaryService.uploadAvatar(avatarFile);
                     user.setAvatarUrl(newAvatarUrl);
                     log.info("Đã upload avatar mới cho user: {}", email);
@@ -349,7 +346,7 @@ public class UserService {
                 .email(updatedUser.getEmail())
                 .phoneNumber(updatedUser.getPhoneNumber())
                 .address(updatedUser.getAddress())
-                .avatarUrl(updatedUser.getAvatarUrl()) // ✅ Trả về URL mới
+                .avatarUrl(updatedUser.getAvatarUrl())
                 .role(updatedUser.getRole().name())
                 .enabled(updatedUser.getEnabled())
                 .createdAt(updatedUser.getCreatedAt())

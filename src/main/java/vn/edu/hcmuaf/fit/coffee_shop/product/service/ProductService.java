@@ -83,6 +83,7 @@ public class ProductService {
                 .category(p.getCategory().name())
                 .size(p.getSize().name())
                 .rating(p.getRating())
+                 .description(p.getDescription())  // THÊM DÒNG NÀY
                 .build();
     }
 }

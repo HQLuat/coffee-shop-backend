@@ -88,8 +88,14 @@ public class AdminOrderService {
 
         // Chỉ cho phép xóa đơn PENDING hoặc CANCELLED
         if (order.getStatus() != OrderStatus.PENDING &&
-                order.getStatus() != OrderStatus.CANCELLED) {
-            throw new RuntimeException("Chỉ có thể xóa đơn hàng ở trạng thái PENDING hoặc CANCELLED");
+                order.getStatus() != OrderStatus.CANCELLED &&
+                order.getStatus() != OrderStatus.REFUNDED &&
+                order.getStatus() != OrderStatus.REFUND_PENDING &&
+                order.getStatus() != OrderStatus.REFUND_PROCESSING &&
+                order.getStatus() != OrderStatus.REFUND_FAILED) {
+            throw new RuntimeException(
+                    "Chỉ có thể xóa đơn hàng ở trạng thái PENDING, CANCELLED hoặc các trạng thái hoàn tiền"
+            );
         }
 
         order.setStatus(OrderStatus.CANCELLED);
@@ -121,6 +127,22 @@ public class AdminOrderService {
                 .filter(o -> o.getStatus() == OrderStatus.CANCELLED)
                 .count();
 
+        long refundedOrders = orders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.REFUNDED)
+                .count();
+
+        long refundPendingOrders = orders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.REFUND_PENDING)
+                .count();
+
+        long refundProcessingOrders = orders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.REFUND_PROCESSING)
+                .count();
+
+        long refundFailedOrders = orders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.REFUND_FAILED)
+                .count();
+
         BigDecimal totalRevenue = orders.stream()
                 .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
                 .map(Order::getTotalAmount)
@@ -134,6 +156,7 @@ public class AdminOrderService {
                 .shippingOrders(orders.stream().filter(o -> o.getStatus() == OrderStatus.SHIPPING).count())
                 .completedOrders(completedOrders)
                 .cancelledOrders(cancelledOrders)
+                .refundedOrders(refundedOrders + refundPendingOrders + refundProcessingOrders + refundFailedOrders)
                 .totalRevenue(totalRevenue)
                 .averageOrderValue(totalOrders > 0 ? totalRevenue.divide(BigDecimal.valueOf(totalOrders), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO)
                 .startDate(start)
@@ -182,17 +205,24 @@ public class AdminOrderService {
             case CONFIRMED -> newStatus == OrderStatus.PREPARING || newStatus == OrderStatus.CANCELLED;
             case PREPARING -> newStatus == OrderStatus.SHIPPING || newStatus == OrderStatus.CANCELLED;
             case SHIPPING -> newStatus == OrderStatus.DELIVERED || newStatus == OrderStatus.CANCELLED;
-            case DELIVERED -> false; // Không cho phép chuyển từ DELIVERED
-            case CANCELLED -> false; // Không cho phép chuyển từ CANCELLED
+            case DELIVERED -> newStatus == OrderStatus.REFUND_PENDING;
+            case REFUND_PENDING -> newStatus == OrderStatus.REFUND_PROCESSING ||
+                    newStatus == OrderStatus.REFUNDED ||
+                    newStatus == OrderStatus.REFUND_FAILED;
+            case REFUND_PROCESSING -> newStatus == OrderStatus.REFUNDED ||
+                    newStatus == OrderStatus.REFUND_FAILED;
+            case REFUNDED -> false;
+            case REFUND_FAILED -> newStatus == OrderStatus.REFUND_PENDING;
+            case CANCELLED -> false;
         };
 
-        if (!isValidTransition) {
-            throw new RuntimeException(
-                    String.format("Không thể chuyển trạng thái từ %s sang %s",
-                            currentStatus.getDisplayName(),
-                            newStatus.getDisplayName())
-            );
-        }
+            if (!isValidTransition) {
+                throw new RuntimeException(
+                        String.format("Không thể chuyển trạng thái từ %s sang %s",
+                                currentStatus.getDisplayName(),
+                                newStatus.getDisplayName())
+                );
+            }
     }
 
     private void updateTimestampForStatus(Order order, OrderStatus status) {

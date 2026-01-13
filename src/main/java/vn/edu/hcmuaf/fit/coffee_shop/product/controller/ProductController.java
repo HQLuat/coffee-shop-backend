@@ -60,6 +60,16 @@ public ResponseEntity<ProductResponse> update(
         request.setImageUrl(newImageUrl);
     } else {
         request.setImageUrl(oldProduct.getImageUrl());
+// --- PHƯƠNG THỨC MỚI THÊM VÀO ĐỂ SỬA LỖI ---
+    @GetMapping("/{id}/variants")
+    public ResponseEntity<List<ProductResponse>> getVariants(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getProductVariants(id));
+    }
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponse> update(
+            @PathVariable Long id,
+            @RequestBody ProductRequest request) {
+        return ResponseEntity.ok(service.update(id, request));
     }
     
     return ResponseEntity.ok(service.update(id, request));

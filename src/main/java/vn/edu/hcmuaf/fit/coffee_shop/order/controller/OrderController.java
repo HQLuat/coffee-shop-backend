@@ -108,7 +108,7 @@ public class OrderController {
     @PostMapping("/zalopay/callback")
     public ResponseEntity<?> zaloPayCallback(@RequestBody Map<String, String> callbackData) {
         try {
-            System.out.println("📞 Received ZaloPay callback: " + callbackData);
+            System.out.println("Received ZaloPay callback: " + callbackData);
 
             boolean isValid = zaloPayService.verifyCallback(callbackData);
 
@@ -123,14 +123,14 @@ public class OrderController {
                         "return_message", "success"
                 ));
             } else {
-                System.err.println("❌ Invalid callback MAC");
+                System.err.println("Invalid callback MAC");
                 return ResponseEntity.ok(Map.of(
                         "return_code", -1,
                         "return_message", "mac not equal"
                 ));
             }
         } catch (Exception e) {
-            System.err.println("❌ Error processing callback: " + e.getMessage());
+            System.err.println("Error processing callback: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.ok(Map.of(
                     "return_code", 0,
@@ -197,7 +197,6 @@ public class OrderController {
             Integer returnCode = (Integer) paymentStatus.get("return_code");
 
             if (returnCode == 1) {
-                // ✅ FIX: Lấy zp_trans_id từ response
                 Object zpTransIdObj = paymentStatus.get("zp_trans_id");
                 String zpTransId = zpTransIdObj != null ? String.valueOf(zpTransIdObj) : null;
 
@@ -210,7 +209,7 @@ public class OrderController {
                 OrderResponse response = orderService.verifyAndConfirmOrder(orderId, zpTransId);
 
                 return ResponseEntity.ok(Map.of(
-                        "message", "✅ Thanh toán thành công! Đơn hàng đã được xác nhận",
+                        "message", "Thanh toán thành công! Đơn hàng đã được xác nhận",
                         "order", response,
                         "zpTransId", zpTransId,
                         "canRefund", true,
@@ -218,13 +217,13 @@ public class OrderController {
                 ));
             } else if (returnCode == 2) {
                 return ResponseEntity.ok(Map.of(
-                        "message", "⏳ Đơn hàng chưa được thanh toán",
+                        "message", "Đơn hàng chưa được thanh toán",
                         "paymentStatus", paymentStatus
                 ));
             } else {
                 return ResponseEntity.badRequest()
                         .body(Map.of(
-                                "message", "❌ Thanh toán thất bại",
+                                "message", "Thanh toán thất bại",
                                 "paymentStatus", paymentStatus
                         ));
             }

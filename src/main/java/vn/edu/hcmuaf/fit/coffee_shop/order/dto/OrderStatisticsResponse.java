@@ -17,6 +17,7 @@ public class OrderStatisticsResponse {
     private Long shippingOrders;
     private Long completedOrders;
     private Long cancelledOrders;
+    private Long refundedOrders;
     private BigDecimal totalRevenue;
     private BigDecimal averageOrderValue;
     private LocalDateTime startDate;

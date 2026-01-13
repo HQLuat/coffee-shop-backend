@@ -1,6 +1,7 @@
 // 1. Tạo Entity: RefundTransaction.java
 package vn.edu.hcmuaf.fit.coffee_shop.order.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,6 +22,7 @@ public class RefundTransaction {
 
     @ManyToOne
     @JoinColumn(name = "order_id", nullable = false)
+    @JsonBackReference
     private Order order;
 
     @Column(nullable = false, unique = true)
@@ -34,9 +36,9 @@ public class RefundTransaction {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private RefundStatus status;
+    private OrderStatus status;
 
-    private Integer returnCode; // Response từ ZaloPay
+    private Integer returnCode;
     private String returnMessage;
 
     @Column(nullable = false)
@@ -48,7 +50,7 @@ public class RefundTransaction {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         if (status == null) {
-            status = RefundStatus.PENDING;
+            status = OrderStatus.PENDING;
         }
     }
 }

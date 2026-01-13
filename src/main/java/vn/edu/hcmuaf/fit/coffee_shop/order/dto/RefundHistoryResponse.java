@@ -1,7 +1,7 @@
 package vn.edu.hcmuaf.fit.coffee_shop.order.dto;
 
 import lombok.*;
-import vn.edu.hcmuaf.fit.coffee_shop.order.entity.RefundStatus;
+import vn.edu.hcmuaf.fit.coffee_shop.order.entity.OrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ public class RefundHistoryResponse {
     private String orderCode;
     private BigDecimal refundAmount;
     private String description;
-    private RefundStatus status;
+    private OrderStatus status;
     private String statusDisplay;
     private Integer returnCode;
     private String returnMessage;

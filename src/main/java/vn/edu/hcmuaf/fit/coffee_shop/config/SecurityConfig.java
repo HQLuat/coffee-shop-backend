@@ -49,6 +49,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
                         // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/active").permitAll()
+                        // Product
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
 
                         // ===== ADMIN ONLY ENDPOINTS =====
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -63,7 +65,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vouchers/*").hasRole("ADMIN")
-
+                        // THÊM 2 DÒNG NÀY CHO ADMIN REVIEWS
+                        .requestMatchers(HttpMethod.GET, "/api/admin/reviews").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/reviews/*").hasRole("ADMIN")
                         // ===== USER + ADMIN ENDPOINTS =====
                         // Auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasAnyRole("USER", "ADMIN")
@@ -77,6 +81,8 @@ public class SecurityConfig {
                         // Voucher
                         .requestMatchers(HttpMethod.GET, "/api/vouchers/*").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/vouchers/apply").hasAnyRole("USER", "ADMIN")
+                        // Product
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasAnyRole("USER", "ADMIN")
                         // Reviews - POST, PUT cho USER + ADMIN
                         .requestMatchers(HttpMethod.POST, "/api/reviews").hasAnyRole("USER", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/reviews/*").hasAnyRole("USER", "ADMIN")

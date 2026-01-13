@@ -37,8 +37,6 @@ public class ProductService {
         p.setImageUrl(r.getImageUrl());
         p.setCategory(Category.valueOf(r.getCategory()));
         p.setSize(Size.valueOf(r.getSize()));
-        p.setRating(r.getRating());
-
         repository.save(p);
         return mapToResponse(p);
     }
@@ -83,7 +81,6 @@ public class ProductService {
                 .imageUrl(r.getImageUrl())
                 .category(Category.valueOf(r.getCategory()))
                 .size(Size.valueOf(r.getSize()))
-                .rating(r.getRating())
                 .build();
     }
 
@@ -95,7 +92,6 @@ public class ProductService {
                 .imageUrl(p.getImageUrl())
                 .category(p.getCategory().name())
                 .size(p.getSize().name())
-                .rating(p.getRating())
                  .description(p.getDescription())  // THÊM DÒNG NÀY
                 .build();
     }

@@ -36,6 +36,4 @@ public class Product {
     @Column(nullable = false)
     private Size size;
 
-    @Column(nullable = false)
-    private Double rating;
 }

@@ -60,8 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/admin/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/users/**").hasRole("ADMIN")
                         // Refund
-                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN") // ✅ Chỉ POST
-                                                                                                           // cần ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN") 
+                                                                                                          
                         // Voucher
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
@@ -81,11 +81,7 @@ public class SecurityConfig {
                         // Profile
                         .requestMatchers("/api/profile/**").hasAnyRole("USER", "ADMIN")
                         // Order
-                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN") // ✅
-                                                                                                                     // GET
-                                                                                                                     // cho
-                                                                                                                     // phép
-                                                                                                                     // USER
+                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")                                                                                       
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
                         // Cart
                         .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")

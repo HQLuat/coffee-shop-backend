@@ -37,29 +37,20 @@ public class RefundService {
     private static final String ZALOPAY_QUERY_REFUND_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/query_refund";
     private static final int MAX_DESCRIPTION_LENGTH = 100;
 
-    /**
-     * ========================================
-     * MAIN REFUND METHOD
-     * ========================================
-     */
     @Transactional
     public RefundResponse createRefund(Long orderId, Long amount, String description) throws Exception {
         log.info("Starting refund process for order #{}", orderId);
 
-        // 1. Validate
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
         validateRefundable(order, amount);
 
-        // 2. Prepare data
         String mRefundId = generateMRefundId();
         long timestamp = System.currentTimeMillis();
         String refundDescription = normalizeDescription(description, order.getOrderCode());
 
-        // 3. Create refund transaction in DB
         RefundTransaction refund = createRefundTransaction(order, mRefundId, amount, refundDescription);
 
-        // 4. Call ZaloPay API
         try {
             Map<String, Object> responseBody = callZaloPayRefundAPI(
                     order, mRefundId, amount, refundDescription, timestamp
@@ -70,74 +61,87 @@ public class RefundService {
 
             log.info("ZaloPay response: return_code={}, message={}", returnCode, returnMessage);
 
-            // 5. Update status based on response
             refund.setReturnCode(returnCode);
             refund.setReturnMessage(returnMessage);
-            refundRepository.save(refund);
 
             if (returnCode == 1) {
-                log.info("Refund SUCCESS - Updating order status");
-                updateRefundAndOrderStatus(refund, order, RefundStatus.SUCCESS);
+                // return_code = 1: SUCCESS
+                log.info("Refund SUCCESS");
+                refund.setStatus(OrderStatus.REFUNDED);
+                refund.setProcessedAt(LocalDateTime.now());
+                refundRepository.saveAndFlush(refund);
+
+                order.setStatus(OrderStatus.REFUNDED);
+                orderRepository.saveAndFlush(order);
 
             } else if (returnCode == 2) {
-                log.info("Refund PROCESSING - Will verify later");
-                refund.setStatus(RefundStatus.PROCESSING);
-                refundRepository.save(refund);
+                log.error("Refund FAILED: {}", returnMessage);
+                refund.setStatus(OrderStatus.REFUND_FAILED);
+                refundRepository.saveAndFlush(refund);
+
+            } else if (returnCode == 3) {
+                log.info("Refund PROCESSING - will verify later");
+                refund.setStatus(OrderStatus.REFUND_PROCESSING);
+                refundRepository.saveAndFlush(refund);
 
             } else {
-                log.error("Refund FAILED: {}", returnMessage);
-                refund.setStatus(RefundStatus.FAILED);
-                refundRepository.save(refund);
+                log.error("Unknown return_code: {}, message: {}", returnCode, returnMessage);
+                refund.setStatus(OrderStatus.REFUND_FAILED);
+                refundRepository.saveAndFlush(refund);
             }
 
             return buildRefundResponse(refund, returnCode, returnMessage);
 
         } catch (Exception e) {
             log.error("Error calling ZaloPay refund API", e);
-            refund.setStatus(RefundStatus.FAILED);
+            refund.setStatus(OrderStatus.REFUND_FAILED);
             refund.setReturnMessage("Error: " + e.getMessage());
             refundRepository.save(refund);
             throw new RuntimeException("Lỗi khi gọi API hoàn tiền ZaloPay: " + e.getMessage());
         }
     }
 
-    /**
-     * ========================================
-     * SCHEDULED JOB - Verify PROCESSING refunds
-     * Chạy mỗi 5 phút để check các refund còn PROCESSING
-     * ========================================
-     */
-    @Scheduled(fixedDelay = 300000) // 5 phút
+    @Scheduled(fixedDelay = 5000)
     @Transactional
     public void verifyProcessingRefunds() {
         List<RefundTransaction> processingRefunds = refundRepository
                 .findAll()
                 .stream()
-                .filter(r -> r.getStatus() == RefundStatus.PROCESSING)
+                .filter(r -> r.getStatus() == OrderStatus.REFUND_PROCESSING)
                 .toList();
 
         if (processingRefunds.isEmpty()) {
             return;
         }
 
-        log.info("🔍 Found {} PROCESSING refunds to verify", processingRefunds.size());
+        log.info("Found {} PROCESSING refunds to verify", processingRefunds.size());
 
         for (RefundTransaction refund : processingRefunds) {
             try {
-                log.info("🔍 Verifying refund {}", refund.getRefundId());
+                log.info("Verifying refund {}", refund.getRefundId());
 
                 Map<String, Object> status = queryRefundStatusInternal(refund.getRefundId());
                 Integer returnCode = (Integer) status.get("return_code");
 
                 if (returnCode == 1) {
                     log.info("Refund {} is now SUCCESS", refund.getRefundId());
-                    updateRefundAndOrderStatus(refund, refund.getOrder(), RefundStatus.SUCCESS);
+                    refund.setStatus(OrderStatus.REFUNDED);
+                    refund.setProcessedAt(LocalDateTime.now());
+                    refundRepository.saveAndFlush(refund);
 
-                } else if (returnCode == 3) {
+                    Order order = refund.getOrder();
+                    order.setStatus(OrderStatus.REFUNDED);
+                    orderRepository.saveAndFlush(order);
+
+                    log.info("Order #{} updated to REFUNDED", order.getId());
+
+                } else if (returnCode == 2) {
+
                     log.error("Refund {} FAILED", refund.getRefundId());
-                    refund.setStatus(RefundStatus.FAILED);
-                    refundRepository.save(refund);
+                    refund.setStatus(OrderStatus.REFUND_FAILED);
+                    refundRepository.saveAndFlush(refund);
                 }
+                // return_code = 3: Still PROCESSING, check again later
 
             } catch (Exception e) {
                 log.error("Error verifying refund {}", refund.getRefundId(), e);
@@ -145,45 +149,6 @@ public class RefundService {
         }
     }
 
-    /**
-     * ========================================
-     * CORE UPDATE METHOD
-     * Tách riêng để đảm bảo transaction độc lập
-     * ========================================
-     */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateRefundAndOrderStatus(RefundTransaction refund, Order order, RefundStatus status) {
-        log.info("Updating refund #{} and order #{} to {}",
-                refund.getId(), order.getId(), status);
-
-        // Update refund
-        refund.setStatus(status);
-        refund.setProcessedAt(LocalDateTime.now());
-        RefundTransaction savedRefund = refundRepository.save(refund);
-        refundRepository.flush();
-
-        log.info("Refund saved with status: {}", savedRefund.getStatus());
-
-        // Update order
-        order.setStatus(OrderStatus.CANCELLED);
-        Order savedOrder = orderRepository.save(order);
-        orderRepository.flush();
-
-        log.info("Order #{} updated to status: {}", savedOrder.getId(), savedOrder.getStatus());
-
-        // Verify
-        Order verifyOrder = orderRepository.findById(order.getId()).orElse(null);
-        if (verifyOrder != null) {
-            log.info("VERIFIED - Order #{} status in DB: {}",
-                    verifyOrder.getId(), verifyOrder.getStatus());
-        }
-    }
-
-    /**
-     * ========================================
-     * QUERY REFUND STATUS (Public API)
-     * ========================================
-     */
     @Transactional
     public Map<String, Object> queryRefundStatus(String mRefundId) throws Exception {
         RefundTransaction refund = refundRepository.findByRefundId(mRefundId)
@@ -193,8 +158,18 @@ public class RefundService {
 
         // Update local status if needed
         Integer returnCode = (Integer) response.get("return_code");
-        if (returnCode == 1 && refund.getStatus() != RefundStatus.SUCCESS) {
-            updateRefundAndOrderStatus(refund, refund.getOrder(), RefundStatus.SUCCESS);
+        if (returnCode == 1 && refund.getStatus() != OrderStatus.REFUNDED) {
+            refund.setStatus(OrderStatus.REFUNDED);
+            refund.setProcessedAt(LocalDateTime.now());
+            refundRepository.saveAndFlush(refund);
+
+            Order order = refund.getOrder();
+            order.setStatus(OrderStatus.REFUNDED);
+            orderRepository.saveAndFlush(order);
+
+        }  else if (returnCode == 2 && refund.getStatus() != OrderStatus.REFUND_FAILED) {
+            refund.setStatus(OrderStatus.REFUND_FAILED);
+            refundRepository.saveAndFlush(refund);
         }
 
         response.put("localStatus", refund.getStatus().name());
@@ -203,12 +178,6 @@ public class RefundService {
         return response;
     }
 
-    /**
-     * ========================================
-     * HELPER METHODS
-     * ========================================
-     */
-
     private RefundTransaction createRefundTransaction(Order order, String mRefundId,
                                                       Long amount, String description) {
         RefundTransaction refund = RefundTransaction.builder()
@@ -216,7 +185,7 @@ public class RefundService {
                 .refundId(mRefundId)
                 .refundAmount(BigDecimal.valueOf(amount))
                 .description(description)
-                .status(RefundStatus.PENDING)
+                .status(OrderStatus.REFUND_PENDING)
                 .build();
         return refundRepository.save(refund);
     }
@@ -273,6 +242,10 @@ public class RefundService {
     }
 
     private void validateRefundable(Order order, Long amount) {
+        if (!order.getStatus().canRefund()) {
+            throw new RuntimeException("Đơn hàng không thể hoàn tiền ở trạng thái: " + order.getStatus().getDisplayName());
+        }
+
         if (order.getZaloPayZpTransId() == null || order.getZaloPayZpTransId().trim().isEmpty()) {
             throw new RuntimeException("Đơn hàng chưa được thanh toán thành công");
         }
@@ -345,8 +318,8 @@ public class RefundService {
     private String getRefundMessage(Integer returnCode, String returnMessage) {
         return switch (returnCode) {
             case 1 -> "Hoàn tiền thành công";
-            case 2 -> "Yêu cầu hoàn tiền đang được xử lý";
-            case 3 -> "Giao dịch hoàn tiền thất bại";
+            case 2 -> "Hoàn tiền thất bại";
+            case 3 -> "Đang xử lý hoàn tiền";
             default -> "Hoàn tiền thất bại: " + returnMessage;
         };
     }

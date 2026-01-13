@@ -75,7 +75,7 @@ public class ZaloPayService {
         String mac = generateMac(data, KEY1);
         orderData.put("mac", mac);
 
-        System.out.println("📤 Sending request to ZaloPay:");
+        System.out.println("Sending request to ZaloPay:");
         System.out.println("app_trans_id: " + appTransId);
 
         try {
@@ -91,7 +91,7 @@ public class ZaloPayService {
             );
 
             Map<String, Object> responseBody = response.getBody();
-            System.out.println("📥 ZaloPay Response: " + responseBody);
+            System.out.println("ZaloPay Response: " + responseBody);
 
             if (responseBody != null) {
                 Integer returnCode = (Integer) responseBody.get("return_code");
@@ -115,7 +115,7 @@ public class ZaloPayService {
             throw new RuntimeException("Không nhận được response từ ZaloPay");
 
         } catch (Exception e) {
-            System.err.println("❌ Error calling ZaloPay: " + e.getMessage());
+            System.err.println("Error calling ZaloPay: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Lỗi kết nối ZaloPay: " + e.getMessage());
         }
@@ -161,7 +161,7 @@ public class ZaloPayService {
         queryData.put("app_trans_id", appTransId);
         queryData.put("mac", mac);
 
-        System.out.println("🔍 Querying payment status:");
+        System.out.println("Querying payment status:");
         System.out.println("app_trans_id: " + appTransId);
 
         try {
@@ -177,12 +177,12 @@ public class ZaloPayService {
             );
 
             Map<String, Object> responseBody = response.getBody();
-            System.out.println("📥 Query Response: " + responseBody);
+            System.out.println("Query Response: " + responseBody);
 
             return responseBody;
 
         } catch (Exception e) {
-            System.err.println("❌ Error querying payment status: " + e.getMessage());
+            System.err.println("Error querying payment status: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Lỗi khi truy vấn trạng thái thanh toán: " + e.getMessage());
         }

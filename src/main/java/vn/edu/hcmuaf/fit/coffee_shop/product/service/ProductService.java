@@ -1,6 +1,7 @@
 package vn.edu.hcmuaf.fit.coffee_shop.product.service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -61,7 +62,19 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         return mapToResponse(p);
     }
-
+// Thêm method trong ProductService
+    public List<ProductResponse> getProductVariants(Long productId) {
+    // Lấy sản phẩm gốc
+    Product baseProduct = repository.findById(productId)
+            .orElseThrow(() -> new RuntimeException("Product not found"));
+    
+    // Tìm tất cả variants cùng tên
+    List<Product> variants = repository.findByName(baseProduct.getName());
+    
+    return variants.stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
     private Product mapToEntity(ProductRequest r) {
         return Product.builder()
                 .name(r.getName())

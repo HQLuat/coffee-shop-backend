@@ -34,7 +34,11 @@ public class ProductController {
             @PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
-
+// --- PHƯƠNG THỨC MỚI THÊM VÀO ĐỂ SỬA LỖI ---
+    @GetMapping("/{id}/variants")
+    public ResponseEntity<List<ProductResponse>> getVariants(@PathVariable Long id) {
+        return ResponseEntity.ok(service.getProductVariants(id));
+    }
     @PutMapping("/{id}")
     public ResponseEntity<ProductResponse> update(
             @PathVariable Long id,

@@ -232,7 +232,7 @@ public class OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
 
-        System.out.println("📝 Updating order with payment info:");
+        System.out.println("Updating order with payment info:");
         System.out.println("  Order ID: " + orderId);
         System.out.println("  Order Code: " + order.getOrderCode());
         System.out.println("  zp_trans_id: " + zpTransId);
@@ -245,12 +245,12 @@ public class OrderService {
         }
 
         // Update status thành CONFIRMED
-        order.setStatus(OrderStatus.CONFIRMED);
+        order.setStatus(OrderStatus.DELIVERED);
         order.setConfirmedAt(LocalDateTime.now());
 
         Order updatedOrder = orderRepository.save(order);
 
-        System.out.println("✅ Order updated successfully");
+        System.out.println("Order updated successfully");
 
         return convertToResponse(updatedOrder);
     }
@@ -276,7 +276,7 @@ public class OrderService {
                 "zaloPayTransId", order.getZaloPayTransId() != null ? order.getZaloPayTransId() : "NULL",
                 "zaloPayZpTransId", order.getZaloPayZpTransId() != null ? order.getZaloPayZpTransId() : "NULL",
                 "canRefund", canRefund,
-                "refundMessage", canRefund ? "✅ Có thể refund" : "❌ Thiếu zp_trans_id hoặc không phải ZaloPay"
+                "refundMessage", canRefund ? "Có thể refund" : "Thiếu zp_trans_id hoặc không phải ZaloPay"
         );
     }
 }

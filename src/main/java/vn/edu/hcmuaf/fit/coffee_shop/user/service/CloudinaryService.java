@@ -107,7 +107,7 @@ public class CloudinaryService {
 
     private void validateFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
-            throw new IOException("File không được để trống");
+            throw new IOException("File không đượgc để trống");
         }
         
         // Check file size

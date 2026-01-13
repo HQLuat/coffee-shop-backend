@@ -63,7 +63,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vouchers/*").hasRole("ADMIN")
-
+                        // THÊM 2 DÒNG NÀY CHO ADMIN REVIEWS
+                        .requestMatchers(HttpMethod.GET, "/api/admin/reviews").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/reviews/*").hasRole("ADMIN")
                         // ===== USER + ADMIN ENDPOINTS =====
                         // Auth
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").hasAnyRole("USER", "ADMIN")

@@ -13,7 +13,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import lombok.RequiredArgsConstructor;
 import vn.edu.hcmuaf.fit.coffee_shop.common.JwtAuthenticationFilter;
 
-
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -44,7 +43,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
                         // Static pages
                         .requestMatchers(HttpMethod.GET, "/verify_success.html", "/verify_fail.html").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/reset_password.html", "/reset_password_fail.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/reset_password.html", "/reset_password_fail.html")
+                        .permitAll()
                         // ZaloPay
                         .requestMatchers("/api/orders/zalopay/callback").permitAll()
                         // Voucher
@@ -58,11 +58,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/admin/users/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/users/**").hasRole("ADMIN")
                         // Refund
-                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN")  // ✅ Chỉ POST cần ADMIN
+                        .requestMatchers(HttpMethod.POST, "/api/orders/*/zalopay/refund").hasRole("ADMIN") // ✅ Chỉ POST
+                                                                                                           // cần ADMIN
                         // Voucher
                         .requestMatchers(HttpMethod.POST, "/api/vouchers").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/vouchers/*").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/vouchers/*").hasRole("ADMIN")
+                        // product
+                        .requestMatchers(HttpMethod.GET, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
 
                         // ===== USER + ADMIN ENDPOINTS =====
                         // Auth
@@ -70,7 +76,11 @@ public class SecurityConfig {
                         // Profile
                         .requestMatchers("/api/profile/**").hasAnyRole("USER", "ADMIN")
                         // Order
-                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN")  // ✅ GET cho phép USER
+                        .requestMatchers(HttpMethod.GET, "/api/orders/zalopay/refund/*").hasAnyRole("USER", "ADMIN") // ✅
+                                                                                                                     // GET
+                                                                                                                     // cho
+                                                                                                                     // phép
+                                                                                                                     // USER
                         .requestMatchers("/api/orders/**").hasAnyRole("USER", "ADMIN")
                         // Cart
                         .requestMatchers("/api/cart/**").hasAnyRole("USER", "ADMIN")

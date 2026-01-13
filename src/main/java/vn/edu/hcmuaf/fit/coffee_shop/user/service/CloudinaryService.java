@@ -21,6 +21,7 @@ public class CloudinaryService {
     private static final long MAX_FILE_SIZE = 5 * 1024 * 1024;
     private static final String[] ALLOWED_FORMATS = {"jpg", "jpeg", "png", "gif", "webp"};
     private static final String FOLDER_NAME = "coffee-shop/avatars";
+    private static final String FOLDER_PRODUCT = "coffee-shop/products";
 
     public String uploadAvatar(MultipartFile file) throws IOException {
         validateFile(file);
@@ -66,6 +67,41 @@ public class CloudinaryService {
             
         } catch (Exception e) {
             log.error("Error deleting avatar from Cloudinary: {}", e.getMessage());
+        }
+    }
+
+    public String uploadProductImage(MultipartFile file) throws IOException {
+        validateFile(file); 
+        
+        try {
+            String publicId = FOLDER_PRODUCT + "/" + UUID.randomUUID().toString();
+            
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap(
+                            "public_id", publicId,
+                            "folder", FOLDER_PRODUCT,
+                            "resource_type", "image",
+                            "transformation", new com.cloudinary.Transformation()
+                                    .width(800).height(800)
+                                    .crop("fill")
+                                    .quality("auto:good")
+                    ));
+            return (String) uploadResult.get("secure_url");
+        } catch (IOException e) {
+            log.error("Error uploading product image: {}", e.getMessage());
+            throw new IOException("Không thể upload ảnh sản phẩm: " + e.getMessage());
+        }
+    }
+
+    public void deleteProductImage(String imageUrl) {
+        if (imageUrl == null || imageUrl.isEmpty()) return;
+        try {
+            String publicId = extractPublicId(imageUrl);
+            if (publicId != null && !publicId.isEmpty()) {
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+            }
+        } catch (Exception e) {
+            log.error("Error deleting product image: {}", e.getMessage());
         }
     }
 

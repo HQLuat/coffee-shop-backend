@@ -36,6 +36,9 @@ public class User {
     @Column(columnDefinition = "TEXT")
     private String address;
 
+    @Column(columnDefinition = "TEXT")
+    private String avatarUrl;
+
     // ======== email verification ========
     @Column(nullable = false)
     @Builder.Default

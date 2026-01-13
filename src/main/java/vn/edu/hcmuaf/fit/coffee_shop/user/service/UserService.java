@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class UserService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
     private final VerificationTokenService verificationTokenService;
+    private final CloudinaryService cloudinaryService;
 
     // Regex patterns for validation
     private static final Pattern EMAIL_PATTERN = Pattern.compile(
@@ -205,8 +207,10 @@ public class UserService {
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
+                .avatarUrl(user.getAvatarUrl())
                 .token(accessToken)
                 .refreshToken(refreshToken.getToken())
+                .role(user.getRole().name())
                 .message("Đăng nhập thành công!")
                 .build();
         } catch (Exception e) {
@@ -254,6 +258,7 @@ public class UserService {
                 .email(user.getEmail())
                 .phoneNumber(user.getPhoneNumber())
                 .address(user.getAddress())
+                .avatarUrl(user.getAvatarUrl())
                 .role(user.getRole().name())
                 .enabled(user.getEnabled())
                 .createdAt(user.getCreatedAt())
@@ -262,7 +267,7 @@ public class UserService {
     }
 
     @Transactional
-    public UserProfileResponse updateUserProfile(String email, UpdateUserRequest request) {
+    public UserProfileResponse updateUserProfile(String email, UpdateUserRequest request, MultipartFile avatarFile) {
         try {
             User user = userRepository.findByEmail(email.toLowerCase().trim())
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
@@ -281,6 +286,33 @@ public class UserService {
 
             if (request.getAddress() != null) {
                 user.setAddress(request.getAddress().trim());
+            }
+
+            if (Boolean.TRUE.equals(request.getDeleteAvatar())) {
+                // Remove old avatar
+                if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                    cloudinaryService.deleteAvatar(user.getAvatarUrl());
+                }
+                user.setAvatarUrl(null);
+                log.info("Đã xóa avatar cho user: {}", email);
+            }
+            else if (avatarFile != null && !avatarFile.isEmpty()) {
+                try {
+                    // Remove old avatar
+                    if (user.getAvatarUrl() != null && !user.getAvatarUrl().isEmpty()) {
+                        cloudinaryService.deleteAvatar(user.getAvatarUrl());
+                        log.info("Đã xóa avatar cũ cho user: {}", email);
+                    }
+                    
+                    // Upload new avatar
+                    String newAvatarUrl = cloudinaryService.uploadAvatar(avatarFile);
+                    user.setAvatarUrl(newAvatarUrl);
+                    log.info("Đã upload avatar mới cho user: {}", email);
+                    
+                } catch (Exception e) {
+                    log.error("Lỗi upload avatar: {}", e.getMessage());
+                    throw new RuntimeException("Không thể upload avatar: " + e.getMessage());
+                }
             }
 
             // Change password
@@ -314,6 +346,7 @@ public class UserService {
                 .email(updatedUser.getEmail())
                 .phoneNumber(updatedUser.getPhoneNumber())
                 .address(updatedUser.getAddress())
+                .avatarUrl(updatedUser.getAvatarUrl())
                 .role(updatedUser.getRole().name())
                 .enabled(updatedUser.getEnabled())
                 .createdAt(updatedUser.getCreatedAt())
@@ -343,7 +376,7 @@ public class UserService {
 
             String[] trustedDomains = {
                 "gmail.com", "yahoo.com", "outlook.com", "hotmail.com",
-                "icloud.com", "protonmail.com", "zoho.com", "aol.com"
+                "icloud.com", "protonmail.com", "zoho.com", "aol.com", "st.hcmuaf.edu.vn"
             };
 
             for (String trustedDomain : trustedDomains) {
@@ -363,5 +396,25 @@ public class UserService {
             return false;
         }
         return PASSWORD_PATTERN.matcher(password).matches();
+    }
+
+    private boolean isValidUrl(String url) {
+        try {
+            // Basic URL validation
+            if (url == null || url.trim().isEmpty()) {
+                return false;
+            }
+
+            // Check if starts with http:// or https://
+            if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                return false;
+            }
+
+            java.net.URL urlObj = new java.net.URL(url);
+            urlObj.toURI();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

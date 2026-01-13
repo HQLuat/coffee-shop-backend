@@ -5,7 +5,6 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -14,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import vn.edu.hcmuaf.fit.coffee_shop.common.JwtTokenUtil;
 import vn.edu.hcmuaf.fit.coffee_shop.user.dto.ForgotPasswordRequest;
 import vn.edu.hcmuaf.fit.coffee_shop.user.dto.ResetPasswordRequest;
-import vn.edu.hcmuaf.fit.coffee_shop.user.dto.UpdateUserRequest;
-import vn.edu.hcmuaf.fit.coffee_shop.user.dto.UserProfileResponse;
 import vn.edu.hcmuaf.fit.coffee_shop.user.dto.UserRequest;
 import vn.edu.hcmuaf.fit.coffee_shop.user.dto.UserResponse;
 import vn.edu.hcmuaf.fit.coffee_shop.user.entity.PasswordResetToken;
@@ -29,9 +26,9 @@ import vn.edu.hcmuaf.fit.coffee_shop.user.service.UserService;
 import vn.edu.hcmuaf.fit.coffee_shop.user.service.VerificationTokenService;
 
 @RestController
-@RequestMapping("/api/users")
+@RequestMapping("/api/auth")
 @RequiredArgsConstructor
-public class UserController {
+public class AuthController {
 
     private final UserService userService;
     private final RefreshTokenService refreshTokenService;
@@ -150,22 +147,6 @@ public class UserController {
             .orElseGet(() -> ResponseEntity.badRequest().body(Map.of("message", "Refresh token khong hop le")));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<?> getMyInfo(Authentication authentication) {
-        String email = (String) authentication.getPrincipal();
-        User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found"));
-
-        return ResponseEntity.ok(Map.of(
-            "id", user.getId(),
-            "email", user.getEmail(),
-            "fullName", user.getFullName(),
-            "role", user.getRole().name(),
-            "enabled", user.getEnabled(),
-            "createdAt", user.getCreatedAt()
-        ));
-    }
-
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         try {
@@ -265,82 +246,6 @@ public class UserController {
             System.err.println("Error in reset password: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
                 "message", "Có lỗi xảy ra. Vui lòng thử lại!"
-            ));
-        }
-    }
-
-    @GetMapping("/profile")
-    public ResponseEntity<UserProfileResponse> getUserProfile(Authentication authentication) {
-        try {
-            String email = (String) authentication.getPrincipal();
-            UserProfileResponse response = userService.getUserProfile(email);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
-    }
-
-    @PutMapping("/profile")
-    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UpdateUserRequest request, Authentication authentication) {
-        try {
-            String email = (String) authentication.getPrincipal();
-            UserProfileResponse response = userService.updateUserProfile(email, request);
-
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "message", e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "Có lỗi xảy ra khi cập nhật thông tin!"
-            ));
-        }
-    }
-
-    @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(@RequestBody Map<String, String> body, Authentication authentication) {
-        try {
-            String email = (String) authentication.getPrincipal();
-            String currentPassword = body.get("currentPassword");
-            String newPassword = body.get("newPassword");
-            String confirmPassword = body.get("confirmPassword");
-
-            if (currentPassword == null || currentPassword.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Vui lòng nhập mật khẩu hiện tại"
-                ));
-            }
-
-            if (newPassword == null || newPassword.isEmpty()) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Vui lòng nhập mật khẩu mới"
-                ));
-            }
-
-            if (!newPassword.equals(confirmPassword)) {
-                return ResponseEntity.badRequest().body(Map.of(
-                    "message", "Mật khẩu xác nhận không khớp"
-                ));
-            }
-
-            UpdateUserRequest request = new UpdateUserRequest();
-            request.setCurrentPassword(currentPassword);
-            request.setNewPassword(newPassword);
-            request.setConfirmNewPassword(confirmPassword);
-
-            userService.updateUserProfile(email, request);
-
-            return ResponseEntity.ok(Map.of(
-                "message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại."
-            ));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                "message", e.getMessage()
-            ));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
-                "message", "Có lỗi xảy ra khi đổi mật khẩu!"
             ));
         }
     }

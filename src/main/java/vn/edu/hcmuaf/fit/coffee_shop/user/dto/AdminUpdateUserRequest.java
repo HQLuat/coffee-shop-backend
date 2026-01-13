@@ -1,26 +1,27 @@
 package vn.edu.hcmuaf.fit.coffee_shop.user.dto;
 
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateUserRequest {
+public class AdminUpdateUserRequest {
     
     @Size(min = 2, message = "Họ tên phải có ít nhất 2 ký tự")
     private String fullName;
+
+    @Email(message = "Email không hợp lệ")
+    private String email;
 
     private String phoneNumber;
 
     private String address;
 
-    private Boolean deleteAvatar;
+    private String role;
 
-    private String currentPassword;
+    private Boolean enabled;
 
-    private String newPassword;
-
-    private String confirmNewPassword;
+    private Boolean locked;
 }

@@ -11,7 +11,9 @@ public class UserResponse {
     private Long id;
     private String fullName;
     private String email;
+    private String avatarUrl;
     private String message;
     private String token;
     private String refreshToken;
+    private String role;
 }

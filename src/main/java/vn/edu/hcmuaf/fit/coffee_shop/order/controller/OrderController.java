@@ -113,11 +113,6 @@ public class OrderController {
             boolean isValid = zaloPayService.verifyCallback(callbackData);
 
             if (isValid) {
-                // TODO: Update order status to CONFIRMED
-                // Parse callback data and update order
-                // String dataStr = callbackData.get("data");
-                // Parse JSON from dataStr to get app_trans_id and update order
-
                 return ResponseEntity.ok(Map.of(
                         "return_code", 1,
                         "return_message", "success"

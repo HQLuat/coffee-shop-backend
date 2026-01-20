@@ -31,6 +31,10 @@ public class Order {
     @Column(nullable = false)
     private String orderCode;
 
+    private BigDecimal subtotal;
+    private BigDecimal tax;
+    private BigDecimal deliveryFee;
+
     @Column(nullable = false)
     private BigDecimal totalAmount;
 

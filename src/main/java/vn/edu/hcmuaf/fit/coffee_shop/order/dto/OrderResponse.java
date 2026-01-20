@@ -16,6 +16,9 @@ import java.util.List;
 public class OrderResponse {
     private Long id;
     private String orderCode;
+    private BigDecimal subtotal;
+    private BigDecimal tax;
+    private BigDecimal deliveryFee;
     private BigDecimal totalAmount;
     private OrderStatus status;
     private String statusDisplay;
@@ -30,4 +33,6 @@ public class OrderResponse {
     private LocalDateTime shippingAt;
     private LocalDateTime deliveredAt;
     private List<OrderItemResponse> items;
+    private Long userId;
+    private String userEmail;
 }

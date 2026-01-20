@@ -29,10 +29,19 @@ public class OrderService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // Calculate total amount
-        BigDecimal totalAmount = request.getItems().stream()
+        // Calculate subtotal from items
+        BigDecimal subtotal = request.getItems().stream()
                 .map(item -> item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // Calculate tax (2%)
+        BigDecimal tax = subtotal.multiply(new BigDecimal("0.02"));
+
+        // Delivery fee
+        BigDecimal deliveryFee = new BigDecimal("15000");
+
+        // Calculate total amount
+        BigDecimal totalAmount = subtotal.add(tax).add(deliveryFee);
 
         // Generate order code
         String orderCode = generateOrderCode();
@@ -41,6 +50,9 @@ public class OrderService {
         Order order = Order.builder()
                 .user(user)
                 .orderCode(orderCode)
+                .subtotal(subtotal)
+                .tax(tax)
+                .deliveryFee(deliveryFee)
                 .totalAmount(totalAmount)
                 .status(OrderStatus.PENDING)
                 .paymentMethod(request.getPaymentMethod())
@@ -51,14 +63,15 @@ public class OrderService {
 
         // Add order items
         for (CartItemRequest itemReq : request.getItems()) {
-            BigDecimal subtotal = itemReq.getPrice().multiply(BigDecimal.valueOf(itemReq.getQuantity()));
+            BigDecimal itemSubtotal = itemReq.getPrice()
+                    .multiply(BigDecimal.valueOf(itemReq.getQuantity()));
 
             OrderItem orderItem = OrderItem.builder()
                     .productId(itemReq.getProductId())
                     .productName(itemReq.getProductName())
                     .price(itemReq.getPrice())
                     .quantity(itemReq.getQuantity())
-                    .subtotal(subtotal)
+                    .subtotal(itemSubtotal)
                     .build();
 
             order.addItem(orderItem);
@@ -181,6 +194,9 @@ public class OrderService {
         return OrderResponse.builder()
                 .id(order.getId())
                 .orderCode(order.getOrderCode())
+                .subtotal(order.getSubtotal())
+                .tax(order.getTax())
+                .deliveryFee(order.getDeliveryFee())
                 .totalAmount(order.getTotalAmount())
                 .status(order.getStatus())
                 .statusDisplay(order.getStatus().getDisplayName())

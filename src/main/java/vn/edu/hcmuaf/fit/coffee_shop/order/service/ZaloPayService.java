@@ -29,8 +29,6 @@ public class ZaloPayService {
     private static final String KEY1 = "PcY4iZIKFCIdgZvA6ueMcMHHUbRLYjPL";
     private static final String KEY2 = "kLtgPl8HHhfvMuDHPwKfgfsY4Ydm9eIz";
     private static final String ZALOPAY_CREATE_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/create";
-    private static final String ZALOPAY_REFUND_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/refund";
-    private static final String ZALOPAY_QUERY_REFUND_ENDPOINT = "https://sb-openapi.zalopay.vn/v2/query_refund";
 
     // Counter cho transaction ID
     private static int transIdCounter = 1;

@@ -60,7 +60,7 @@ public class ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
         return mapToResponse(p);
     }
-// Thêm method trong ProductService
+
     public List<ProductResponse> getProductVariants(Long productId) {
     // Lấy sản phẩm gốc
     Product baseProduct = repository.findById(productId)
@@ -92,7 +92,7 @@ public class ProductService {
                 .imageUrl(p.getImageUrl())
                 .category(p.getCategory().name())
                 .size(p.getSize().name())
-                 .description(p.getDescription())  // THÊM DÒNG NÀY
+                 .description(p.getDescription())
                 .build();
     }
 }

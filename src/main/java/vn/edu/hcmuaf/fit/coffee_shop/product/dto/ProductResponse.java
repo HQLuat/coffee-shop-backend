@@ -14,5 +14,5 @@ public class ProductResponse {
     private String imageUrl;
     private String category;
     private String size;
-    private String description;  // THÊM DÒNG NÀY
+    private String description;
 }

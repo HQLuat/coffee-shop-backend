@@ -2,6 +2,8 @@ package vn.edu.hcmuaf.fit.coffee_shop.product.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import vn.edu.hcmuaf.fit.coffee_shop.cart.entity.CartItem; 
 
 @Entity
 @Table(name = "products")
@@ -36,4 +38,11 @@ public class Product {
     @Column(nullable = false)
     private Size size;
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore 
+    private java.util.List<vn.edu.hcmuaf.fit.coffee_shop.review.entity.Review> reviews;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private java.util.List<CartItem> cartItems;
 }

@@ -24,9 +24,6 @@ public class CartController {
 
     private final CartService cartService;
 
-    /**
-     * Lấy giỏ hàng hiện tại
-     */
     @GetMapping
     public ResponseEntity<CartResponse> getCart(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
@@ -34,9 +31,6 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Thêm sản phẩm vào giỏ hàng
-     */
     @PostMapping("/add")
     public ResponseEntity<CartResponse> addToCart(
             @RequestBody AddToCartRequest request,
@@ -46,9 +40,6 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Cập nhật số lượng sản phẩm
-     */
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponse> updateCartItem(
             @PathVariable Long cartItemId,
@@ -59,9 +50,6 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Xóa sản phẩm khỏi giỏ hàng
-     */
     @DeleteMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponse> removeCartItem(
             @PathVariable Long cartItemId,
@@ -71,9 +59,6 @@ public class CartController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Xóa toàn bộ giỏ hàng
-     */
     @DeleteMapping("/clear")
     public ResponseEntity<CartResponse> clearCart(Authentication authentication) {
         String email = (String) authentication.getPrincipal();

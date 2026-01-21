@@ -32,8 +32,6 @@ public class CartItem {
     @ManyToOne
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
-
-    // ✅ THAY ĐỔI: Liên kết với Product thay vì chỉ lưu productId
     @ManyToOne
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
@@ -44,7 +42,6 @@ public class CartItem {
     @Column(nullable = false)
     private BigDecimal subtotal;
 
-    // Helper method để tính subtotal
     public void calculateSubtotal() {
         if (product != null) {
             this.subtotal = BigDecimal.valueOf(product.getPrice())

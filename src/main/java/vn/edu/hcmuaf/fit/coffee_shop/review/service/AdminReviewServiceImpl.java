@@ -36,7 +36,7 @@ public class AdminReviewServiceImpl implements AdminReviewService {
                 .userName(review.getUser().getFullName())
                 .userEmail(review.getUser().getEmail())
                 .productId(review.getProduct().getId())
-                .productName(review.getProduct().getName()) // Giả định Product có getName()
+                .productName(review.getProduct().getName()) 
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdAt(review.getCreatedAt())

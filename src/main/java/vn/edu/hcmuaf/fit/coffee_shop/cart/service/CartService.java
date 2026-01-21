@@ -22,7 +22,7 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final UserRepository userRepository;
-    private final ProductRepository productRepository; // ✅ THÊM MỚI
+    private final ProductRepository productRepository; 
 
     @Transactional
     public CartResponse getCart(String email) {
@@ -40,19 +40,16 @@ public class CartService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
 
-        // ✅ Validation
         if (request.getQuantity() == null || request.getQuantity() <= 0) {
             throw new RuntimeException("Số lượng phải lớn hơn 0");
         }
 
-        // ✅ Tìm Product
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new RuntimeException("Sản phẩm không tồn tại"));
 
         Cart cart = cartRepository.findByUser(user)
                 .orElseGet(() -> createNewCart(user));
 
-        // ✅ Kiểm tra sản phẩm đã có trong giỏ chưa
         CartItem existingItem = cartItemRepository
                 .findByCartIdAndProductId(cart.getId(), product.getId())
                 .orElse(null);
@@ -66,7 +63,7 @@ public class CartService {
             // Thêm mới
             CartItem newItem = CartItem.builder()
                     .cart(cart)
-                    .product(product)  // ✅ Lưu Product object
+                    .product(product)  
                     .quantity(request.getQuantity())
                     .build();
             newItem.calculateSubtotal();
@@ -155,7 +152,6 @@ public class CartService {
         return response;
     }
 
-    // ✅ Helper methods
     private Cart createNewCart(User user) {
         Cart cart = Cart.builder()
                 .user(user)
@@ -172,9 +168,9 @@ public class CartService {
                             .id(item.getId())
                             .productId(product.getId())
                             .productName(product.getName())
-                            .imageUrl(product.getImageUrl())      // ✅ Từ Product
-                            .category(product.getCategory().name())  // ✅ Từ Product
-                            .size(product.getSize().name())       // ✅ Từ Product
+                            .imageUrl(product.getImageUrl())      
+                            .category(product.getCategory().name())  
+                            .size(product.getSize().name())       
                             .price(BigDecimal.valueOf(product.getPrice()))
                             .quantity(item.getQuantity())
                             .subtotal(item.getSubtotal())

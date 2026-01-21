@@ -21,24 +21,24 @@ import vn.edu.hcmuaf.fit.coffee_shop.user.repository.UserRepository;
 public class ReviewController {
     
     private final ReviewService reviewService;
-    private final UserRepository userRepository;  // THÊM DEPENDENCY
+    private final UserRepository userRepository; 
     
-    // SỬA HÀM NÀY - Lấy userId từ email trong principal
+    // lay user
     private Long getUserIdFromAuthentication(Authentication authentication) {
-        String email = authentication.getName();  // Lấy email từ principal
+        String email = authentication.getName(); 
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Người dùng không tồn tại"));
         return user.getId();
     }
 
-    // --- GET: Lấy danh sách đánh giá sản phẩm ---
+    // Lấy danh sách đánh giá sản phẩm 
     @GetMapping
     public ResponseEntity<List<ReviewResponse>> getReviewsByProduct(@RequestParam("productId") Long productId) {
         List<ReviewResponse> reviews = reviewService.getReviewsByProductId(productId);
         return ResponseEntity.ok(reviews);
     }
     
-    // --- POST: Thêm đánh giá mới ---
+    // Thêm đánh giá mới 
     @PostMapping
     public ResponseEntity<ReviewResponse> addReview(
         @Valid @RequestBody ReviewRequest request,
@@ -49,7 +49,7 @@ public class ReviewController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
-    // --- PUT: Cập nhật đánh giá ---
+    // Cập nhật đánh giá 
     @PutMapping("/{reviewId}")
     public ResponseEntity<ReviewResponse> updateReview(
         @PathVariable Long reviewId,
@@ -61,7 +61,7 @@ public class ReviewController {
         return ResponseEntity.ok(response);
     }
     
-    // --- DELETE: Xóa đánh giá ---
+    // Xóa đánh giá 
     @DeleteMapping("/{reviewId}")
     public ResponseEntity<Void> deleteReview(
         @PathVariable Long reviewId,

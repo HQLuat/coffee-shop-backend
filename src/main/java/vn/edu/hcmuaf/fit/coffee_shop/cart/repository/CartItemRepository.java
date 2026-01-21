@@ -9,6 +9,5 @@ import vn.edu.hcmuaf.fit.coffee_shop.cart.entity.CartItem;
 
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-    // ✅ THAY ĐỔI: Tìm theo Cart và Product object
     Optional<CartItem> findByCartIdAndProductId(Long cartId, Long productId);
 }

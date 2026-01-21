@@ -76,7 +76,7 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public List<ReviewResponse> getReviewsByProductId(Long productId) {
-        // Lấy danh sách đánh giá theo Product ID, sắp xếp theo mới nhất
+        
         return reviewRepository.findByProductIdOrderByCreatedAtDesc(productId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -88,12 +88,10 @@ public class ReviewServiceImpl implements ReviewService {
         Review review = reviewRepository.findById(reviewId)
             .orElseThrow(() -> new RuntimeException("Đánh giá không tồn tại."));
             
-        // Kiểm tra quyền: Chỉ người tạo đánh giá mới được sửa
         if (!review.getUser().getId().equals(userId)) {
             throw new RuntimeException("Bạn không có quyền sửa đánh giá này.");
         }
         
-        // Chỉ cập nhật rating và comment
         review.setRating(request.getRating());
         review.setComment(request.getComment());
         

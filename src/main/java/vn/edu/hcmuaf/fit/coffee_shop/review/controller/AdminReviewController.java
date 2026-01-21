@@ -23,7 +23,6 @@ public class AdminReviewController {
    @DeleteMapping("/{id}")
 public ResponseEntity<?> deleteReview(@PathVariable Long id) {
     adminReviewService.deleteReviewByAdmin(id);
-    // Trả về một Map để Jackson chuyển thành JSON: {"message": "..."}
     return ResponseEntity.ok(java.util.Map.of("message", "Xóa đánh giá thành công bởi Admin."));
 }
 }

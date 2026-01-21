@@ -24,9 +24,6 @@ public class OrderController {
     private final ZaloPayService zaloPayService;
     private final RefundService refundService;
 
-    /**
-     * Tạo đơn hàng từ giỏ hàng
-     */
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
             @RequestBody CreateOrderRequest request,
@@ -36,9 +33,6 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy chi tiết đơn hàng
-     */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(
             @PathVariable Long orderId,
@@ -48,9 +42,6 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Lấy lịch sử đơn hàng
-     */
     @GetMapping("/history")
     public ResponseEntity<List<OrderHistoryResponse>> getOrderHistory(Authentication authentication) {
         String email = (String) authentication.getPrincipal();
@@ -58,9 +49,6 @@ public class OrderController {
         return ResponseEntity.ok(history);
     }
 
-    /**
-     * Đặt lại đơn hàng (reorder)
-     */
     @PostMapping("/{orderId}/reorder")
     public ResponseEntity<OrderResponse> reorder(
             @PathVariable Long orderId,
@@ -70,9 +58,6 @@ public class OrderController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Tạo thanh toán ZaloPay
-     */
     @PostMapping("/{orderId}/zalopay")
     public ResponseEntity<?> createZaloPayPayment(
             @PathVariable Long orderId,
@@ -86,9 +71,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Kiểm tra trạng thái thanh toán ZaloPay
-     */
     @GetMapping("/zalopay/query/{appTransId}")
     public ResponseEntity<?> queryPaymentStatus(
             @PathVariable String appTransId,
@@ -102,9 +84,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * ZaloPay callback endpoint
-     */
     @PostMapping("/zalopay/callback")
     public ResponseEntity<?> zaloPayCallback(@RequestBody Map<String, String> callbackData) {
         try {
@@ -134,9 +113,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Hủy đơn hàng (chỉ được hủy khi đơn đang ở trạng thái PENDING)
-     */
     @PostMapping("/{orderId}/cancel")
     public ResponseEntity<?> cancelOrder(
             @PathVariable Long orderId,
@@ -150,10 +126,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Kiểm tra thông tin thanh toán của order (để debug)
-     * GET /api/orders/{orderId}/payment-info
-     */
     @GetMapping("/{orderId}/payment-info")
     public ResponseEntity<?> getOrderPaymentInfo(
             @PathVariable Long orderId,
@@ -167,12 +139,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Verify và update order status sau khi thanh toán ZaloPay thành công
-     * POST /api/orders/{orderId}/zalopay/verify-and-update
-     *
-     * FIXED VERSION - Lưu zp_trans_id
-     */
     @PostMapping("/{orderId}/zalopay/verify-and-update")
     public ResponseEntity<?> verifyAndUpdateOrder(
             @PathVariable Long orderId,
@@ -229,9 +195,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Hoàn tiền ZaloPay - Phiên bản mới với RefundService
-     */
     @PostMapping("/{orderId}/zalopay/refund")
     public ResponseEntity<?> refundZaloPayPayment(
             @PathVariable Long orderId,
@@ -276,9 +239,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Kiểm tra trạng thái hoàn tiền ZaloPay
-     */
     @GetMapping("/zalopay/refund/{refundId}")
     public ResponseEntity<?> queryRefundStatus(
             @PathVariable String refundId,
@@ -295,9 +255,6 @@ public class OrderController {
         }
     }
 
-    /**
-     * Lấy lịch sử hoàn tiền của đơn hàng
-     */
     @GetMapping("/{orderId}/refunds")
     public ResponseEntity<?> getRefundHistory(
             @PathVariable Long orderId,
@@ -311,16 +268,12 @@ public class OrderController {
         }
     }
 
-    /**
-     * Hoàn tiền toàn bộ và hủy đơn hàng
-     */
     @PostMapping("/{orderId}/refund-and-cancel")
     public ResponseEntity<?> refundAndCancelOrder(
             @PathVariable Long orderId,
             @RequestBody(required = false) Map<String, String> body,
             Authentication authentication) {
         try {
-            // Lấy order để biết tổng tiền
             OrderResponse order = orderService.getOrderById(orderId,
                     (String) authentication.getPrincipal());
 
@@ -328,8 +281,6 @@ public class OrderController {
             if (description == null) {
                 description = "Hủy đơn hàng và hoàn tiền toàn bộ";
             }
-
-            // Hoàn tiền toàn bộ
             RefundResponse response = refundService.createRefund(
                     orderId,
                     order.getTotalAmount().longValue(),

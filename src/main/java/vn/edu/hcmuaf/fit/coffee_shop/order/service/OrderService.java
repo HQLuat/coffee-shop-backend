@@ -228,11 +228,6 @@ public class OrderService {
                 .build();
     }
 
-    // Thêm method này vào OrderService.java
-
-    /**
-     * Get Order entity (helper method for internal use)
-     */
     public Order getOrderEntity(Long orderId) {
         return orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));
@@ -271,9 +266,6 @@ public class OrderService {
         return convertToResponse(updatedOrder);
     }
 
-    /**
-     * Get payment info của order (để debug)
-     */
     public Map<String, Object> getOrderPaymentInfo(Long orderId) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new RuntimeException("Đơn hàng không tồn tại"));

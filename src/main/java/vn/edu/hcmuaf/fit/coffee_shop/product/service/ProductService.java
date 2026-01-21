@@ -62,11 +62,9 @@ public class ProductService {
     }
 
     public List<ProductResponse> getProductVariants(Long productId) {
-    // Lấy sản phẩm gốc
     Product baseProduct = repository.findById(productId)
             .orElseThrow(() -> new RuntimeException("Product not found"));
     
-    // Tìm tất cả variants cùng tên
     List<Product> variants = repository.findByName(baseProduct.getName());
     
     return variants.stream()

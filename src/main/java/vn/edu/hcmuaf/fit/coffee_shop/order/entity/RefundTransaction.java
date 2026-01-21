@@ -1,4 +1,3 @@
-// 1. Tạo Entity: RefundTransaction.java
 package vn.edu.hcmuaf.fit.coffee_shop.order.entity;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;

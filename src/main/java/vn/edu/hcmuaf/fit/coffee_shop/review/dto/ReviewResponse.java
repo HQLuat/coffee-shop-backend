@@ -11,7 +11,7 @@ public class ReviewResponse {
     private Long id;
     private Long productId;
     private Long userId;
-    private String reviewerName; // Tên đầy đủ của người đánh giá
+    private String reviewerName;
     private Integer rating;
     private String comment;
     private LocalDateTime createdAt;
